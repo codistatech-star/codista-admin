@@ -63,10 +63,12 @@ export default async function MembersPage({
     orderBy: { name: "asc" },
   });
 
+  const statusFilter = sp.status ?? "ACTIVE";
+
   const filtered = members.filter((m) => {
-    if (!sp.status) return true;
+    if (!statusFilter) return true;
     const s = membershipStatus(m.isActive, m.membership?.validUntil, settings.expiringSoonDays);
-    return s === sp.status;
+    return s === statusFilter;
   });
 
   function badgeClass(status: string) {
@@ -109,7 +111,7 @@ export default async function MembersPage({
           <AdminSelect
             className="w-full md:max-w-xs"
             name="status"
-            defaultValue={sp.status ?? ""}
+            defaultValue={statusFilter}
             placeholder="All statuses"
             options={[
               { value: "ACTIVE", label: "Active" },

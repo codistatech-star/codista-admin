@@ -444,6 +444,25 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: #111827;
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  line-height: 1.25;
+}
+
+.admin-app .admin-datepicker-month.is-clickable {
+  cursor: pointer;
+}
+
+.admin-app .admin-datepicker-month.is-clickable:hover {
+  background: #f3f4f6;
+  color: var(--admin-navy);
+}
+
+.admin-app .admin-datepicker-month:disabled {
+  cursor: default;
+  opacity: 1;
 }
 
 .admin-app .admin-datepicker-nav {
@@ -543,7 +562,11 @@
   width: calc(100vw - 2rem);
   max-width: 28rem;
   margin: auto;
-  max-height: min(90dvh, 100%);
+  max-height: min(
+    90dvh,
+    calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 2rem)
+  );
+  overflow: hidden;
 }
 
 .admin-app .admin-modal::backdrop {
@@ -558,7 +581,8 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: min(90dvh, 100%);
+  max-height: inherit;
+  min-height: 0;
 }
 
 .admin-app .admin-modal-header {
@@ -599,9 +623,14 @@
 }
 
 .admin-app .admin-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 1.25rem;
+  overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .admin-app .admin-phone {
