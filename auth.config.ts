@@ -1,3 +1,4 @@
+import type { Role } from "@prisma/client";
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
@@ -18,7 +19,7 @@ export const authConfig = {
     async jwt({ token, user, trigger, session }) {
       if (user) {
         const u = user as {
-          role?: string;
+          role?: Role;
           branchIds?: string[];
         };
         token.role = u.role;
