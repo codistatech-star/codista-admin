@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { BackgroundMotifs } from "@/components/public/BackgroundMotifs";
 import { PublicFooter, PublicHeader } from "@/components/public/SiteChrome";
 import { HeroBanner } from "@/components/public/HeroBanner";
 import { SafeImage } from "@/components/public/SafeImage";
@@ -31,6 +32,9 @@ export default async function HomePage() {
         />
 
         <div className="relative z-0 bg-paper">
+          <BackgroundMotifs local />
+          <div className="paper-grain pointer-events-none absolute inset-0 z-0" />
+          <div className="relative z-[1]">
           <section id="stats" className="px-4 py-12 md:px-8">
             <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-3">
               {[
@@ -262,6 +266,7 @@ export default async function HomePage() {
               </div>
             </div>
           </section>
+          </div>
         </div>
       </main>
       <PublicFooter />

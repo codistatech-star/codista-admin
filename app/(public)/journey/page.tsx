@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackgroundMotifs } from "@/components/public/BackgroundMotifs";
 import { PublicFooter, PublicHeader } from "@/components/public/SiteChrome";
 import { SafeImage } from "@/components/public/SafeImage";
 import { getPublicSiteData } from "@/lib/public-content";
@@ -9,7 +10,8 @@ export default async function JourneyPage() {
   return (
     <div className="relative bg-paper text-ink">
       <PublicHeader />
-      <main>
+      <BackgroundMotifs />
+      <main className="relative z-10">
         <section className="relative flex min-h-[60vh] items-end bg-ink px-4 pb-14 pt-32 md:px-8">
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-black/40" />
           <div className="relative mx-auto w-full max-w-6xl">
@@ -35,6 +37,9 @@ export default async function JourneyPage() {
           </div>
         </section>
 
+        <div className="relative">
+          <div className="paper-grain pointer-events-none absolute inset-0 z-0" />
+          <div className="relative z-[1]">
         <section id="achievements" className="px-4 py-14 md:px-8">
           <div className="mx-auto max-w-6xl">
             <p className="section-kicker">Achievements</p>
@@ -138,6 +143,8 @@ export default async function JourneyPage() {
             </Link>
           </div>
         </section>
+          </div>
+        </div>
       </main>
       <PublicFooter />
     </div>

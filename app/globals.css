@@ -756,6 +756,78 @@
   top: 0;
 }
 
+.paper-grain {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  opacity: 0.045;
+}
+
+.journey-motifs {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.journey-motifs-local {
+  position: absolute;
+}
+
+.journey-dojang {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgb(15 23 42 / 0.035) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(15 23 42 / 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.journey-taegeuk {
+  position: absolute;
+  top: 12%;
+  right: -6%;
+  width: min(42vw, 34rem);
+  height: auto;
+  opacity: 0.16;
+  animation: taegeuk-spin 80s linear infinite;
+}
+
+.journey-kicker {
+  position: absolute;
+  left: -4%;
+  bottom: -6%;
+  width: min(38vw, 28rem);
+  height: auto;
+  color: #dc2626;
+  opacity: 0.08;
+}
+
+.journey-kicker-2 {
+  left: auto;
+  right: 8%;
+  bottom: 12%;
+  width: min(24vw, 18rem);
+  opacity: 0.07;
+  transform: scaleX(-1);
+  filter: sepia(1) saturate(6) hue-rotate(-20deg);
+}
+
+@keyframes taegeuk-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-taegeuk {
+    animation: none;
+  }
+}
+
 .admin-app .admin-sidebar-nav {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
