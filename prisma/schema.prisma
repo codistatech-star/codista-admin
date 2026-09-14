@@ -1,0 +1,407 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  BRANCH_ADMIN
+}
+
+enum GalleryCategory {
+  TRAINING
+  EVENTS
+  MEDALS
+}
+
+enum PaymentMode {
+  CASH
+  UPI
+  BANK
+}
+
+enum StockMovementType {
+  PURCHASE
+  SALE
+  ISSUE
+  DAMAGE
+  TRANSFER_IN
+  TRANSFER_OUT
+}
+
+enum CashEntryType {
+  INCOME
+  EXPENSE
+}
+
+enum CashEntrySource {
+  MEMBERSHIP
+  STOCK_SALE
+  EVENT
+  MANUAL
+  OTHER
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  name         String
+  passwordHash String
+  role         Role         @default(BRANCH_ADMIN)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  branches     UserBranch[]
+  attendanceSessions AttendanceSession[] @relation("TakenBy")
+  payments     Payment[]
+  cashEntries  CashEntry[]
+  stockMovements StockMovement[]
+}
+
+model Branch {
+  id          String       @id @default(cuid())
+  name        String
+  address     String?
+  phone       String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  users       UserBranch[]
+  members     Member[]
+  batches     Batch[]
+  attendanceSessions AttendanceSession[]
+  payments    Payment[]
+  cashAccounts CashAccount[]
+  cashEntries CashEntry[]
+  stockMovements StockMovement[]
+}
+
+model UserBranch {
+  id       String @id @default(cuid())
+  userId   String
+  branchId String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, branchId])
+}
+
+model ClassPlan {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  fee       Decimal  @db.Decimal(10, 2)
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  members   Member[]
+}
+
+model ExtraClass {
+  id        String             @id @default(cuid())
+  name      String             @unique
+  fee       Decimal            @db.Decimal(10, 2)
+  sortOrder Int                @default(0)
+  isActive  Boolean            @default(true)
+  members   MemberExtraClass[]
+}
+
+model Batch {
+  id        String        @id @default(cuid())
+  name      String
+  branchId  String?
+  sortOrder Int           @default(0)
+  isActive  Boolean       @default(true)
+  branch    Branch?       @relation(fields: [branchId], references: [id])
+  members   MemberBatch[]
+  sessions  AttendanceSession[]
+
+  @@unique([name, branchId])
+}
+
+model BeltGrade {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  members   Member[]
+}
+
+model BloodGroup {
+  id        String  @id @default(cuid())
+  name      String  @unique
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+}
+
+model AcademySettings {
+  id                       String   @id @default("default")
+  joiningFee               Decimal  @default(2000) @db.Decimal(10, 2)
+  joiningFeeSlabs          Json     // [{ fromDay, toDay, percent }]
+  membershipMonths         Int      @default(1)
+  monthlyFeeDay            Int      @default(10)
+  expiringSoonDays         Int      @default(5)
+  graceDays                Int      @default(0)
+  allowAttendanceWhenExpired Boolean @default(true)
+  lateFineAmount           Decimal  @default(0) @db.Decimal(10, 2)
+  receiptPrefix            String   @default("COD")
+  updatedAt                DateTime @updatedAt
+}
+
+model Member {
+  id              String             @id @default(cuid())
+  code            String             @unique
+  name            String
+  gender          String
+  dob             DateTime
+  address         String
+  mobile          String
+  joiningDate     DateTime
+  schoolClass     String?
+  institute       String?
+  fatherName      String?
+  fatherContact   String?
+  fatherOccupation String?
+  bloodGroup      String?
+  heightCm        Decimal?           @db.Decimal(6, 2)
+  weightKg        Decimal?           @db.Decimal(6, 2)
+  passportNumber  String?
+  allergic        String?
+  medicines       String?
+  photoUrl        String?
+  isActive        Boolean            @default(true)
+  branchId        String
+  classPlanId     String
+  beltGradeId     String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  branch          Branch             @relation(fields: [branchId], references: [id])
+  classPlan       ClassPlan          @relation(fields: [classPlanId], references: [id])
+  beltGrade       BeltGrade          @relation(fields: [beltGradeId], references: [id])
+  batches         MemberBatch[]
+  extraClasses    MemberExtraClass[]
+  membership      Membership?
+  payments        Payment[]
+  attendanceEntries AttendanceEntry[]
+  stockMovements  StockMovement[]
+}
+
+model MemberBatch {
+  id       String @id @default(cuid())
+  memberId String
+  batchId  String
+  isPrimary Boolean @default(false)
+  member   Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  batch    Batch  @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, batchId])
+}
+
+model MemberExtraClass {
+  id           String     @id @default(cuid())
+  memberId     String
+  extraClassId String
+  member       Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  extraClass   ExtraClass @relation(fields: [extraClassId], references: [id], onDelete: Cascade)
+
+  @@unique([memberId, extraClassId])
+}
+
+model Membership {
+  id         String   @id @default(cuid())
+  memberId   String   @unique
+  validFrom  DateTime
+  validUntil DateTime
+  updatedAt  DateTime @updatedAt
+  member     Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  receiptNo     String      @unique
+  memberId      String
+  branchId      String
+  collectedById String
+  paidAt        DateTime    @default(now())
+  planFee       Decimal     @db.Decimal(10, 2)
+  extraFees     Decimal     @default(0) @db.Decimal(10, 2)
+  joiningFee    Decimal     @default(0) @db.Decimal(10, 2)
+  lateFine      Decimal     @default(0) @db.Decimal(10, 2)
+  discount      Decimal     @default(0) @db.Decimal(10, 2)
+  amountPaid    Decimal     @db.Decimal(10, 2)
+  mode          PaymentMode
+  monthsCovered Int         @default(1)
+  validUntil    DateTime
+  notes         String?
+  isFirstPayment Boolean    @default(false)
+  createdAt     DateTime    @default(now())
+  member        Member      @relation(fields: [memberId], references: [id])
+  branch        Branch      @relation(fields: [branchId], references: [id])
+  collectedBy   User        @relation(fields: [collectedById], references: [id])
+  cashEntry     CashEntry?
+}
+
+model AttendanceSession {
+  id          String            @id @default(cuid())
+  date        DateTime          @db.Date
+  batchId     String
+  branchId    String
+  takenById   String?
+  createdAt   DateTime          @default(now())
+  batch       Batch             @relation(fields: [batchId], references: [id])
+  branch      Branch            @relation(fields: [branchId], references: [id])
+  takenBy     User?             @relation("TakenBy", fields: [takenById], references: [id])
+  entries     AttendanceEntry[]
+
+  @@unique([date, batchId, branchId])
+}
+
+model AttendanceEntry {
+  id        String            @id @default(cuid())
+  sessionId String
+  memberId  String
+  isPresent Boolean
+  markedAt  DateTime          @default(now())
+  session   AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  member    Member            @relation(fields: [memberId], references: [id])
+
+  @@unique([sessionId, memberId])
+}
+
+model StockItem {
+  id          String         @id @default(cuid())
+  name        String
+  sku         String?        @unique
+  description String?
+  costPrice   Decimal        @default(0) @db.Decimal(10, 2)
+  salePrice   Decimal        @default(0) @db.Decimal(10, 2)
+  lowStockAt  Int            @default(5)
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  variants    StockVariant[]
+  movements   StockMovement[]
+}
+
+model StockVariant {
+  id         String          @id @default(cuid())
+  itemId     String
+  label      String          // e.g. size/color
+  quantity   Int             @default(0)
+  salePrice  Decimal?        @db.Decimal(10, 2) // null = use item salePrice
+  costPrice  Decimal?        @db.Decimal(10, 2) // null = use item costPrice
+  item       StockItem       @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  movements  StockMovement[]
+
+  @@unique([itemId, label])
+}
+
+model StockMovement {
+  id          String            @id @default(cuid())
+  itemId      String
+  variantId   String?
+  branchId    String
+  type        StockMovementType
+  quantity    Int
+  unitPrice   Decimal?          @db.Decimal(10, 2)
+  memberId    String?
+  createdById String
+  notes       String?
+  createdAt   DateTime          @default(now())
+  item        StockItem         @relation(fields: [itemId], references: [id])
+  variant     StockVariant?     @relation(fields: [variantId], references: [id])
+  branch      Branch            @relation(fields: [branchId], references: [id])
+  member      Member?           @relation(fields: [memberId], references: [id])
+  createdBy   User              @relation(fields: [createdById], references: [id])
+  cashEntry   CashEntry?
+}
+
+model CashAccount {
+  id        String      @id @default(cuid())
+  name      String
+  branchId  String
+  isActive  Boolean     @default(true)
+  branch    Branch      @relation(fields: [branchId], references: [id])
+  entries   CashEntry[]
+
+  @@unique([name, branchId])
+}
+
+model CashEntry {
+  id            String          @id @default(cuid())
+  accountId     String
+  branchId      String
+  type          CashEntryType
+  source        CashEntrySource @default(MANUAL)
+  amount        Decimal         @db.Decimal(10, 2)
+  category      String?
+  description   String?
+  entryDate     DateTime        @db.Date
+  paymentId     String?         @unique
+  stockMovementId String?       @unique
+  createdById   String
+  createdAt     DateTime        @default(now())
+  account       CashAccount     @relation(fields: [accountId], references: [id])
+  branch        Branch          @relation(fields: [branchId], references: [id])
+  payment       Payment?        @relation(fields: [paymentId], references: [id])
+  stockMovement StockMovement?  @relation(fields: [stockMovementId], references: [id])
+  createdBy     User            @relation(fields: [createdById], references: [id])
+}
+
+// —— Website CMS ——
+
+model Achievement {
+  id          String  @id @default(cuid())
+  studentName String
+  photoUrl    String?
+  event       String
+  result      String
+  year        String
+  level       String
+  venue       String?
+  summary     String?
+  featured    Boolean @default(false)
+  sortOrder   Int     @default(0)
+  isPublished Boolean @default(true)
+}
+
+model GalleryImage {
+  id          String          @id @default(cuid())
+  src         String
+  alt         String
+  category    GalleryCategory
+  featured    Boolean         @default(false)
+  sortOrder   Int             @default(0)
+  isPublished Boolean         @default(true)
+}
+
+model Video {
+  id          String  @id @default(cuid())
+  youtubeId   String
+  title       String
+  summary     String?
+  sortOrder   Int     @default(0)
+  isPublished Boolean @default(true)
+}
+
+model LeadershipPerson {
+  id          String  @id @default(cuid())
+  name        String
+  position    String
+  photoUrl    String?
+  sortOrder   Int     @default(0)
+  isPublished Boolean @default(true)
+}
+
+model TrialLead {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  program   String?
+  branch    String?
+  message   String?
+  createdAt DateTime @default(now())
+}
