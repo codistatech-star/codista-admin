@@ -9,7 +9,7 @@ export function ReportMonthPicker({ month }: { month: string }) {
 
   return (
     <AdminMonthPicker
-      className="w-44"
+      className="w-full sm:w-44"
       align="end"
       value={month}
       onChange={(next) => {

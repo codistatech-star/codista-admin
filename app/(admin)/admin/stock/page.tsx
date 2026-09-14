@@ -4,9 +4,10 @@ import {
   PageHeader,
   AdminCard,
   SubmitButton,
-  AdminTableWrap,
   AdminEmptyRow,
   AdminSelect,
+  AdminResponsiveList,
+  AdminListCard,
 } from "@/components/admin/ui";
 import { AddStockItemModal } from "@/components/admin/AddStockItemModal";
 import { RecordStockMovementModal } from "@/components/admin/RecordStockMovementModal";
@@ -115,6 +116,11 @@ export default async function StockPage({
     });
   }
 
+  const emptyMessage =
+    q || lowOnly
+      ? "No stock items match these filters."
+      : "No stock items yet. Use Add item to create the catalogue.";
+
   const cards = [
     { label: "Items", value: String(allItems.length), href: "/admin/stock" },
     { label: "Units on hand", value: String(unitsOnHand), href: "/admin/stock" },
@@ -166,13 +172,13 @@ export default async function StockPage({
       <AdminCard>
         <form className="flex flex-wrap gap-3">
           <input
-            className="admin-input max-w-xs"
+            className="admin-input w-full md:max-w-xs"
             name="q"
             placeholder="Search name / SKU"
             defaultValue={sp.q}
           />
           <AdminSelect
-            className="max-w-xs"
+            className="w-full md:max-w-xs"
             name="stock"
             defaultValue={sp.stock ?? ""}
             placeholder="All stock"
@@ -187,59 +193,99 @@ export default async function StockPage({
         </form>
       </AdminCard>
 
-      <AdminTableWrap>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>SKU</th>
-              <th>Variants / qty</th>
-              <th>Sale price</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => {
+      <AdminResponsiveList
+        cards={
+          items.length ? (
+            items.map((item) => {
               const qty = item.variants.reduce((n, v) => n + v.quantity, 0);
               const low = qty <= item.lowStockAt;
               return (
-                <tr key={item.id}>
-                  <td className="font-medium text-gray-900">{item.name}</td>
-                  <td className="font-mono text-xs">{item.sku ?? "—"}</td>
-                  <td>
-                    <StockVariantsModal
-                      item={item}
-                      trigger={`${item.variants.length} / ${qty}`}
-                    />
-                  </td>
-                  <td>{formatINR(item.salePrice)}</td>
-                  <td>
+                <AdminListCard key={item.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900">{item.name}</p>
+                      <p className="mt-0.5 font-mono text-xs text-[var(--admin-muted)]">
+                        {item.sku ?? "—"}
+                      </p>
+                    </div>
                     {low ? (
                       <span className="badge-expired">Low stock</span>
                     ) : (
                       <span className="badge-active">OK</span>
                     )}
-                  </td>
-                  <td>
+                  </div>
+                  <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <dt className="text-xs text-[var(--admin-muted)]">Variants / qty</dt>
+                      <dd>
+                        <StockVariantsModal
+                          item={item}
+                          trigger={`${item.variants.length} / ${qty}`}
+                        />
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-[var(--admin-muted)]">Sale price</dt>
+                      <dd>{formatINR(item.salePrice)}</dd>
+                    </div>
+                  </dl>
+                  <div className="mt-3 flex justify-end border-t border-[var(--admin-border)] pt-3">
                     <StockRowActions item={item} />
-                  </td>
-                </tr>
+                  </div>
+                </AdminListCard>
               );
-            })}
-            {!items.length ? (
-              <AdminEmptyRow
-                colSpan={6}
-                message={
-                  q || lowOnly
-                    ? "No stock items match these filters."
-                    : "No stock items yet. Use Add item to create the catalogue."
-                }
-              />
-            ) : null}
-          </tbody>
-        </table>
-      </AdminTableWrap>
+            })
+          ) : (
+            <AdminListCard>
+              <p className="text-center text-sm text-[var(--admin-muted)]">{emptyMessage}</p>
+            </AdminListCard>
+          )
+        }
+        table={
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>SKU</th>
+                <th>Variants / qty</th>
+                <th>Sale price</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => {
+                const qty = item.variants.reduce((n, v) => n + v.quantity, 0);
+                const low = qty <= item.lowStockAt;
+                return (
+                  <tr key={item.id}>
+                    <td className="font-medium text-gray-900">{item.name}</td>
+                    <td className="font-mono text-xs">{item.sku ?? "—"}</td>
+                    <td>
+                      <StockVariantsModal
+                        item={item}
+                        trigger={`${item.variants.length} / ${qty}`}
+                      />
+                    </td>
+                    <td>{formatINR(item.salePrice)}</td>
+                    <td>
+                      {low ? (
+                        <span className="badge-expired">Low stock</span>
+                      ) : (
+                        <span className="badge-active">OK</span>
+                      )}
+                    </td>
+                    <td>
+                      <StockRowActions item={item} />
+                    </td>
+                  </tr>
+                );
+              })}
+              {!items.length ? <AdminEmptyRow colSpan={6} message={emptyMessage} /> : null}
+            </tbody>
+          </table>
+        }
+      />
     </div>
   );
 }

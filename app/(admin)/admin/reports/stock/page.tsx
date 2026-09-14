@@ -1,4 +1,10 @@
-import { PageHeader, AdminCard, AdminTableWrap, AdminEmptyRow } from "@/components/admin/ui";
+import {
+  PageHeader,
+  AdminCard,
+  AdminEmptyRow,
+  AdminResponsiveList,
+  AdminListCard,
+} from "@/components/admin/ui";
 import { requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 
@@ -29,29 +35,61 @@ export default async function StockReportPage() {
         </AdminCard>
       </div>
 
-      <AdminTableWrap>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Item</th>
-              <th>On hand</th>
-              <th>Low at</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((i) => (
-              <tr key={i.id}>
-                <td className="font-medium text-gray-900">{i.name}</td>
-                <td>{i.qty}</td>
-                <td>{i.lowStockAt}</td>
-                <td>{i.low ? <span className="text-[var(--admin-red)]">Low</span> : "OK"}</td>
+      <AdminResponsiveList
+        cards={
+          rows.length ? (
+            rows.map((i) => (
+              <AdminListCard key={i.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-medium text-gray-900">{i.name}</p>
+                  {i.low ? (
+                    <span className="text-[var(--admin-red)]">Low</span>
+                  ) : (
+                    <span className="text-sm text-[var(--admin-muted)]">OK</span>
+                  )}
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <dt className="text-xs text-[var(--admin-muted)]">On hand</dt>
+                    <dd>{i.qty}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-[var(--admin-muted)]">Low at</dt>
+                    <dd>{i.lowStockAt}</dd>
+                  </div>
+                </dl>
+              </AdminListCard>
+            ))
+          ) : (
+            <AdminListCard>
+              <p className="text-center text-sm text-[var(--admin-muted)]">No stock items.</p>
+            </AdminListCard>
+          )
+        }
+        table={
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>On hand</th>
+                <th>Low at</th>
+                <th>Status</th>
               </tr>
-            ))}
-            {!rows.length ? <AdminEmptyRow colSpan={4} message="No stock items." /> : null}
-          </tbody>
-        </table>
-      </AdminTableWrap>
+            </thead>
+            <tbody>
+              {rows.map((i) => (
+                <tr key={i.id}>
+                  <td className="font-medium text-gray-900">{i.name}</td>
+                  <td>{i.qty}</td>
+                  <td>{i.lowStockAt}</td>
+                  <td>{i.low ? <span className="text-[var(--admin-red)]">Low</span> : "OK"}</td>
+                </tr>
+              ))}
+              {!rows.length ? <AdminEmptyRow colSpan={4} message="No stock items." /> : null}
+            </tbody>
+          </table>
+        }
+      />
     </div>
   );
 }

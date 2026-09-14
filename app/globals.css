@@ -540,9 +540,10 @@
   border: none;
   padding: 0;
   background: transparent;
-  max-width: calc(100vw - 2rem);
-  width: 28rem;
+  width: calc(100vw - 2rem);
+  max-width: 28rem;
   margin: auto;
+  max-height: min(90dvh, 100%);
 }
 
 .admin-app .admin-modal::backdrop {
@@ -555,6 +556,9 @@
   background: #fff;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: min(90dvh, 100%);
 }
 
 .admin-app .admin-modal-header {
@@ -564,6 +568,7 @@
   gap: 1rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--admin-border);
+  flex-shrink: 0;
 }
 
 .admin-app .admin-modal-title {
@@ -595,6 +600,8 @@
 
 .admin-app .admin-modal-body {
   padding: 1.25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .admin-app .admin-phone {

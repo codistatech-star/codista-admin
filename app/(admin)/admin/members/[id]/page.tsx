@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import {
   PageHeader,
   AdminCard,
-  AdminTableWrap,
   AdminEmptyRow,
+  AdminResponsiveList,
+  AdminListCard,
 } from "@/components/admin/ui";
 import { CollectPaymentModal } from "@/components/admin/CollectPaymentModal";
 import { NewMemberForm } from "@/components/admin/NewMemberForm";
@@ -107,33 +108,67 @@ export default async function MemberDetailPage({
       />
 
       <AdminCard title="Payment history">
-        <AdminTableWrap className="border-0">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Receipt</th>
-                <th>Date</th>
-                <th>Amount</th>
-                <th>Mode</th>
-                <th>Valid until</th>
-              </tr>
-            </thead>
-            <tbody>
-              {member.payments.map((p) => (
-                <tr key={p.id}>
-                  <td className="font-mono text-xs">{p.receiptNo}</td>
-                  <td>{formatDate(p.paidAt)}</td>
-                  <td>{formatINR(Number(p.amountPaid))}</td>
-                  <td>{p.mode}</td>
-                  <td>{formatDate(p.validUntil)}</td>
+        <AdminResponsiveList
+          tableWrapClassName="border-0"
+          cards={
+            member.payments.length ? (
+              member.payments.map((p) => (
+                <AdminListCard key={p.id} className="!shadow-none">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-mono text-xs text-[var(--admin-muted)]">{p.receiptNo}</p>
+                      <p className="mt-1 text-lg font-semibold text-gray-900">
+                        {formatINR(Number(p.amountPaid))}
+                      </p>
+                    </div>
+                    <p className="text-sm text-[var(--admin-muted)]">{formatDate(p.paidAt)}</p>
+                  </div>
+                  <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <dt className="text-xs text-[var(--admin-muted)]">Mode</dt>
+                      <dd>{p.mode}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs text-[var(--admin-muted)]">Valid until</dt>
+                      <dd>{formatDate(p.validUntil)}</dd>
+                    </div>
+                  </dl>
+                </AdminListCard>
+              ))
+            ) : (
+              <AdminListCard className="!shadow-none">
+                <p className="text-center text-sm text-[var(--admin-muted)]">No payments yet</p>
+              </AdminListCard>
+            )
+          }
+          table={
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Receipt</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Mode</th>
+                  <th>Valid until</th>
                 </tr>
-              ))}
-              {!member.payments.length ? (
-                <AdminEmptyRow colSpan={5} message="No payments yet" />
-              ) : null}
-            </tbody>
-          </table>
-        </AdminTableWrap>
+              </thead>
+              <tbody>
+                {member.payments.map((p) => (
+                  <tr key={p.id}>
+                    <td className="font-mono text-xs">{p.receiptNo}</td>
+                    <td>{formatDate(p.paidAt)}</td>
+                    <td>{formatINR(Number(p.amountPaid))}</td>
+                    <td>{p.mode}</td>
+                    <td>{formatDate(p.validUntil)}</td>
+                  </tr>
+                ))}
+                {!member.payments.length ? (
+                  <AdminEmptyRow colSpan={5} message="No payments yet" />
+                ) : null}
+              </tbody>
+            </table>
+          }
+        />
       </AdminCard>
     </div>
   );

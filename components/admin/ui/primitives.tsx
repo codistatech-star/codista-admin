@@ -66,3 +66,39 @@ export function AdminButton({
 export function AdminTableWrap({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("admin-table-wrap", className)}>{children}</div>;
 }
+
+/** Mobile card stack + desktop table. Desktop layout unchanged at md+. */
+export function AdminResponsiveList({
+  cards,
+  table,
+  className,
+  tableWrapClassName,
+}: {
+  cards: ReactNode;
+  table: ReactNode;
+  className?: string;
+  tableWrapClassName?: string;
+}) {
+  return (
+    <div className={className}>
+      <div className="space-y-3 md:hidden">{cards}</div>
+      <div className="hidden md:block">
+        <AdminTableWrap className={tableWrapClassName}>{table}</AdminTableWrap>
+      </div>
+    </div>
+  );
+}
+
+export function AdminListCard({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("rounded-xl border border-[var(--admin-border)] bg-white p-4 shadow-sm", className)}>
+      {children}
+    </div>
+  );
+}

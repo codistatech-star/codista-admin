@@ -153,14 +153,23 @@ function NavIcon({ name }: { name: NavIconName }) {
   }
 }
 
-export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
+export function AdminSidebar({
+  isAdmin,
+  forceExpanded = false,
+  onNavigate,
+}: {
+  isAdmin: boolean;
+  forceExpanded?: boolean;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const activeId = useMemo(() => {
     const match = navItems.find((item) => itemIsActive(item, pathname, isAdmin));
     return match && match.kind === "group" ? match.id : null;
   }, [pathname, isAdmin]);
 
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsedState, setCollapsed] = useState(false);
+  const collapsed = forceExpanded ? false : collapsedState;
   const [openMap, setOpenMap] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(
       navItems.filter((item): item is Extract<NavItem, { kind: "group" }> => item.kind === "group").map((g) => [g.id, false]),
@@ -220,6 +229,7 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
   }
 
   function toggleCollapsed() {
+    if (forceExpanded) return;
     setCollapsed((prev) => {
       const next = !prev;
       persistCollapsed(next);
@@ -253,7 +263,11 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
       )}
     >
       <div className={cn("flex shrink-0 items-center border-b border-white/10", collapsed ? "flex-col gap-2 px-2 py-3" : "justify-between px-3 py-3")}>
-        <Link href="/admin/dashboard" className={cn("flex min-w-0 items-center", collapsed ? "justify-center" : "gap-3")}>
+        <Link
+          href="/admin/dashboard"
+          onClick={onNavigate}
+          className={cn("flex min-w-0 items-center", collapsed ? "justify-center" : "gap-3")}
+        >
           <Image
             src="/logo/logo.jpg"
             alt="CODISTA"
@@ -269,26 +283,28 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
             </div>
           )}
         </Link>
-        <button
-          type="button"
-          onClick={toggleCollapsed}
-          className="rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <svg
-            className={cn("h-4 w-4 transition-transform", collapsed ? "rotate-180" : "")}
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            aria-hidden
+        {forceExpanded ? null : (
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="rounded-md p-1.5 text-white/70 hover:bg-white/10 hover:text-white"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <path
-              fillRule="evenodd"
-              d="M12.79 5.23a.75.75 0 01-.02 1.06L8.83 10l3.94 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-              clipRule="evenodd"
-            />
-          </svg>
-        </button>
+            <svg
+              className={cn("h-4 w-4 transition-transform", collapsed ? "rotate-180" : "")}
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path
+                fillRule="evenodd"
+                d="M12.79 5.23a.75.75 0 01-.02 1.06L8.83 10l3.94 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        )}
       </div>
 
       <nav className="admin-sidebar-nav min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-2 py-3">
@@ -302,6 +318,7 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
                 active={active}
                 title={item.label}
                 className={collapsed ? "justify-center px-2" : undefined}
+                onClick={onNavigate}
               >
                 <NavIcon name={item.icon} />
                 {collapsed ? <span className="sr-only">{item.label}</span> : <span className="truncate">{item.label}</span>}
@@ -358,6 +375,7 @@ export function AdminSidebar({ isAdmin }: { isAdmin: boolean }) {
                         href={child.href}
                         active={pathMatches(child.href, pathname)}
                         className="px-2 py-1.5 text-[13px]"
+                        onClick={onNavigate}
                       >
                         {child.label}
                       </AdminNavLink>

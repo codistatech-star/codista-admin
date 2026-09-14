@@ -75,7 +75,7 @@ export function StockVariantsModal({
           setOpen(next);
           if (!next) setError(null);
         }}
-        className="!w-[32rem]"
+        className="!max-w-lg"
       >
         <form ref={formRef} action={handleAdd} className="space-y-3" autoComplete="off">
           <input type="hidden" name="itemId" value={item.id} />

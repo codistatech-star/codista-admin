@@ -1,4 +1,10 @@
-import { PageHeader, AdminCard, AdminTableWrap, AdminEmptyRow } from "@/components/admin/ui";
+import {
+  PageHeader,
+  AdminCard,
+  AdminEmptyRow,
+  AdminResponsiveList,
+  AdminListCard,
+} from "@/components/admin/ui";
 import { PaymentReceiptModal } from "@/components/admin/PaymentReceiptModal";
 import { ReportMonthPicker } from "@/components/admin/ReportMonthPicker";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
@@ -69,55 +75,102 @@ export default async function PaymentReportPage({
         </AdminCard>
       </div>
 
-      <AdminTableWrap>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Receipt</th>
-              <th>Member</th>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Mode</th>
-            </tr>
-          </thead>
-          <tbody>
-            {collections.map((p) => (
-              <tr key={p.id}>
-                <td>
-                  <PaymentReceiptModal
-                    payment={{
-                      receiptNo: p.receiptNo,
-                      memberName: p.member.name,
-                      memberCode: p.member.code,
-                      paidAt: p.paidAt.toISOString(),
-                      mode: p.mode,
-                      monthsCovered: p.monthsCovered,
-                      validUntil: p.validUntil.toISOString(),
-                      planFee: Number(p.planFee),
-                      extraFees: Number(p.extraFees),
-                      joiningFee: Number(p.joiningFee),
-                      lateFine: Number(p.lateFine),
-                      discount: Number(p.discount),
-                      amountPaid: Number(p.amountPaid),
-                      isFirstPayment: p.isFirstPayment,
-                      notes: p.notes,
-                    }}
-                  />
-                </td>
-                <td>
-                  {p.member.name} ({p.member.code})
-                </td>
-                <td>{formatDate(p.paidAt)}</td>
-                <td>{formatINR(Number(p.amountPaid))}</td>
-                <td>{p.mode}</td>
+      <AdminResponsiveList
+        cards={
+          collections.length ? (
+            collections.map((p) => (
+              <AdminListCard key={p.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <PaymentReceiptModal
+                      payment={{
+                        receiptNo: p.receiptNo,
+                        memberName: p.member.name,
+                        memberCode: p.member.code,
+                        paidAt: p.paidAt.toISOString(),
+                        mode: p.mode,
+                        monthsCovered: p.monthsCovered,
+                        validUntil: p.validUntil.toISOString(),
+                        planFee: Number(p.planFee),
+                        extraFees: Number(p.extraFees),
+                        joiningFee: Number(p.joiningFee),
+                        lateFine: Number(p.lateFine),
+                        discount: Number(p.discount),
+                        amountPaid: Number(p.amountPaid),
+                        isFirstPayment: p.isFirstPayment,
+                        notes: p.notes,
+                      }}
+                    />
+                    <p className="mt-1 text-sm text-gray-900">
+                      {p.member.name} ({p.member.code})
+                    </p>
+                    <p className="text-xs text-[var(--admin-muted)]">{formatDate(p.paidAt)}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="font-semibold text-[var(--admin-navy)]">
+                      {formatINR(Number(p.amountPaid))}
+                    </p>
+                    <p className="text-xs text-[var(--admin-muted)]">{p.mode}</p>
+                  </div>
+                </div>
+              </AdminListCard>
+            ))
+          ) : (
+            <AdminListCard>
+              <p className="text-center text-sm text-[var(--admin-muted)]">No collections this month.</p>
+            </AdminListCard>
+          )
+        }
+        table={
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Receipt</th>
+                <th>Member</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Mode</th>
               </tr>
-            ))}
-            {!collections.length ? (
-              <AdminEmptyRow colSpan={5} message="No collections this month." />
-            ) : null}
-          </tbody>
-        </table>
-      </AdminTableWrap>
+            </thead>
+            <tbody>
+              {collections.map((p) => (
+                <tr key={p.id}>
+                  <td>
+                    <PaymentReceiptModal
+                      payment={{
+                        receiptNo: p.receiptNo,
+                        memberName: p.member.name,
+                        memberCode: p.member.code,
+                        paidAt: p.paidAt.toISOString(),
+                        mode: p.mode,
+                        monthsCovered: p.monthsCovered,
+                        validUntil: p.validUntil.toISOString(),
+                        planFee: Number(p.planFee),
+                        extraFees: Number(p.extraFees),
+                        joiningFee: Number(p.joiningFee),
+                        lateFine: Number(p.lateFine),
+                        discount: Number(p.discount),
+                        amountPaid: Number(p.amountPaid),
+                        isFirstPayment: p.isFirstPayment,
+                        notes: p.notes,
+                      }}
+                    />
+                  </td>
+                  <td>
+                    {p.member.name} ({p.member.code})
+                  </td>
+                  <td>{formatDate(p.paidAt)}</td>
+                  <td>{formatINR(Number(p.amountPaid))}</td>
+                  <td>{p.mode}</td>
+                </tr>
+              ))}
+              {!collections.length ? (
+                <AdminEmptyRow colSpan={5} message="No collections this month." />
+              ) : null}
+            </tbody>
+          </table>
+        }
+      />
     </div>
   );
 }

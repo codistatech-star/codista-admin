@@ -54,7 +54,7 @@ export function AdminModal({
       ) : null}
       <dialog
         ref={dialogRef}
-        className={cn("admin-modal", className)}
+        className={cn("admin-modal max-w-md", className)}
         aria-labelledby={titleId}
         onClose={() => setOpen(false)}
         onClick={(e) => {

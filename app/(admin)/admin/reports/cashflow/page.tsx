@@ -1,4 +1,10 @@
-import { PageHeader, AdminCard, AdminTableWrap, AdminEmptyRow } from "@/components/admin/ui";
+import {
+  PageHeader,
+  AdminCard,
+  AdminEmptyRow,
+  AdminResponsiveList,
+  AdminListCard,
+} from "@/components/admin/ui";
 import { ReportMonthPicker } from "@/components/admin/ReportMonthPicker";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
@@ -75,7 +81,7 @@ export default async function CashflowReportPage({
 
       <div className="grid gap-4 md:grid-cols-2">
         <AdminCard title="This month">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
                 Income
@@ -100,7 +106,7 @@ export default async function CashflowReportPage({
         </AdminCard>
 
         <AdminCard title="Balances">
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {[...orderedBalances, ...extras].map((a) => (
               <div key={a.id}>
                 <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
@@ -115,33 +121,60 @@ export default async function CashflowReportPage({
         </AdminCard>
       </div>
 
-      <AdminTableWrap>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Account</th>
-              <th>Type</th>
-              <th>Category</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {monthEntries.map((e) => (
-              <tr key={e.id}>
-                <td>{formatDate(e.entryDate)}</td>
-                <td>{e.account.name}</td>
-                <td>{e.type}</td>
-                <td>{e.category || "—"}</td>
-                <td>{formatINR(Number(e.amount))}</td>
+      <AdminResponsiveList
+        cards={
+          monthEntries.length ? (
+            monthEntries.map((e) => (
+              <AdminListCard key={e.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-[var(--admin-muted)]">{formatDate(e.entryDate)}</p>
+                    <p className="font-medium text-gray-900">{e.account.name}</p>
+                    <p className="mt-0.5 text-xs text-[var(--admin-muted)]">{e.type}</p>
+                  </div>
+                  <p className="shrink-0 font-semibold text-[var(--admin-navy)]">
+                    {formatINR(Number(e.amount))}
+                  </p>
+                </div>
+                <p className="mt-3 text-sm">{e.category || "—"}</p>
+              </AdminListCard>
+            ))
+          ) : (
+            <AdminListCard>
+              <p className="text-center text-sm text-[var(--admin-muted)]">
+                No cashflow entries this month.
+              </p>
+            </AdminListCard>
+          )
+        }
+        table={
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Amount</th>
               </tr>
-            ))}
-            {!monthEntries.length ? (
-              <AdminEmptyRow colSpan={5} message="No cashflow entries this month." />
-            ) : null}
-          </tbody>
-        </table>
-      </AdminTableWrap>
+            </thead>
+            <tbody>
+              {monthEntries.map((e) => (
+                <tr key={e.id}>
+                  <td>{formatDate(e.entryDate)}</td>
+                  <td>{e.account.name}</td>
+                  <td>{e.type}</td>
+                  <td>{e.category || "—"}</td>
+                  <td>{formatINR(Number(e.amount))}</td>
+                </tr>
+              ))}
+              {!monthEntries.length ? (
+                <AdminEmptyRow colSpan={5} message="No cashflow entries this month." />
+              ) : null}
+            </tbody>
+          </table>
+        }
+      />
     </div>
   );
 }

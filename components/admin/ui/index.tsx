@@ -1,4 +1,4 @@
-export { PageHeader, AdminCard, AdminButton, AdminTableWrap } from "./primitives";
+export { PageHeader, AdminCard, AdminButton, AdminTableWrap, AdminResponsiveList, AdminListCard } from "./primitives";
 export { SubmitButton, ConfirmDeleteButton } from "./SubmitButton";
 export { AdminSelect } from "./AdminSelect";
 export { AdminDatePicker } from "./AdminDatePicker";

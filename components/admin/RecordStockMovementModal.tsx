@@ -159,7 +159,7 @@ export function RecordStockMovementModal({
           resetForm();
         }
       }}
-      className="!w-[44rem] max-w-[95vw]"
+      className="!max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-2">

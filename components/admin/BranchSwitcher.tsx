@@ -4,23 +4,26 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { AdminSelect } from "@/components/admin/ui";
+import { cn } from "@/lib/utils";
 
 export function BranchSwitcher({
   branches,
   activeBranchId,
+  compact = false,
 }: {
   branches: { id: string; name: string }[];
   activeBranchId?: string;
+  compact?: boolean;
 }) {
   const { update } = useSession();
   const router = useRouter();
   const [pending, start] = useTransition();
 
   return (
-    <label className="flex items-center gap-2 text-sm">
-      <span className="text-[var(--admin-muted)]">Branch</span>
+    <label className={cn("flex items-center gap-2 text-sm", compact && "w-full")}>
+      {!compact ? <span className="text-[var(--admin-muted)]">Branch</span> : null}
       <AdminSelect
-        className="max-w-[220px]"
+        className={compact ? "w-full" : "max-w-[220px]"}
         disabled={pending || branches.length === 0}
         value={activeBranchId ?? ""}
         options={branches.map((b) => ({ value: b.id, label: b.name }))}

@@ -29,7 +29,7 @@ export function AddStockItemModal({
       triggerClassName={triggerClassName}
       open={open}
       onOpenChange={onOpenChange}
-      className="!w-[32rem]"
+      className="!max-w-lg"
     >
       <form action={upsertStockItem} className="space-y-3">
         {item ? <input type="hidden" name="id" value={item.id} /> : null}

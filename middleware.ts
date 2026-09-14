@@ -37,6 +37,9 @@ export default auth((req) => {
   }
 
   if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    if (pathname === "/admin/manifest.webmanifest") {
+      return NextResponse.next();
+    }
     if (!req.auth) {
       const url = req.nextUrl.clone();
       url.pathname = "/admin/login";

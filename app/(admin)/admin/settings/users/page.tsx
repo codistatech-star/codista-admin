@@ -3,10 +3,11 @@ import { redirect } from "next/navigation";
 import {
   PageHeader,
   SubmitButton,
-  AdminTableWrap,
   AdminEmptyRow,
   AdminModal,
   AdminCheckbox,
+  AdminResponsiveList,
+  AdminListCard,
 } from "@/components/admin/ui";
 import { requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
@@ -75,31 +76,24 @@ export default async function UsersPage() {
         }
       />
 
-      <AdminTableWrap>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Branches</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((u) => (
-              <tr key={u.id} className={!u.isActive ? "opacity-60" : undefined}>
-                <td className="font-medium text-gray-900">{u.name}</td>
-                <td>{u.email}</td>
-                <td className="text-sm text-[var(--admin-muted)]">
-                  {u.branches.map((b) => b.branch.name).join(", ") || "No branches"}
-                </td>
-                <td>
+      <AdminResponsiveList
+        cards={
+          users.length ? (
+            users.map((u) => (
+              <AdminListCard key={u.id} className={!u.isActive ? "opacity-60" : undefined}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900">{u.name}</p>
+                    <p className="mt-0.5 text-sm text-[var(--admin-muted)]">{u.email}</p>
+                    <p className="mt-1 text-sm text-[var(--admin-muted)]">
+                      {u.branches.map((b) => b.branch.name).join(", ") || "No branches"}
+                    </p>
+                  </div>
                   <span className={u.isActive ? "badge-active" : "badge-inactive"}>
                     {u.isActive ? "Active" : "Revoked"}
                   </span>
-                </td>
-                <td>
+                </div>
+                <div className="mt-3 flex justify-end border-t border-[var(--admin-border)] pt-3">
                   {u.isActive ? (
                     <form action={revokeBranchAdmin}>
                       <input type="hidden" name="id" value={u.id} />
@@ -115,15 +109,65 @@ export default async function UsersPage() {
                       </SubmitButton>
                     </form>
                   )}
-                </td>
+                </div>
+              </AdminListCard>
+            ))
+          ) : (
+            <AdminListCard>
+              <p className="text-center text-sm text-[var(--admin-muted)]">No branch admins yet.</p>
+            </AdminListCard>
+          )
+        }
+        table={
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Branches</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-            {!users.length ? (
-              <AdminEmptyRow colSpan={5} message="No branch admins yet." />
-            ) : null}
-          </tbody>
-        </table>
-      </AdminTableWrap>
+            </thead>
+            <tbody>
+              {users.map((u) => (
+                <tr key={u.id} className={!u.isActive ? "opacity-60" : undefined}>
+                  <td className="font-medium text-gray-900">{u.name}</td>
+                  <td>{u.email}</td>
+                  <td className="text-sm text-[var(--admin-muted)]">
+                    {u.branches.map((b) => b.branch.name).join(", ") || "No branches"}
+                  </td>
+                  <td>
+                    <span className={u.isActive ? "badge-active" : "badge-inactive"}>
+                      {u.isActive ? "Active" : "Revoked"}
+                    </span>
+                  </td>
+                  <td>
+                    {u.isActive ? (
+                      <form action={revokeBranchAdmin}>
+                        <input type="hidden" name="id" value={u.id} />
+                        <SubmitButton variant="danger" pendingLabel="Revoking…">
+                          Deactivate
+                        </SubmitButton>
+                      </form>
+                    ) : (
+                      <form action={reactivateBranchAdmin}>
+                        <input type="hidden" name="id" value={u.id} />
+                        <SubmitButton variant="danger" pendingLabel="Reactivating…">
+                          Activate
+                        </SubmitButton>
+                      </form>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              {!users.length ? (
+                <AdminEmptyRow colSpan={5} message="No branch admins yet." />
+              ) : null}
+            </tbody>
+          </table>
+        }
+      />
     </div>
   );
 }

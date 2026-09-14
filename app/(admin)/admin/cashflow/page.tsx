@@ -3,11 +3,12 @@ import {
   PageHeader,
   AdminCard,
   SubmitButton,
-  AdminTableWrap,
   AdminSelect,
   AdminDatePicker,
   AdminEmptyRow,
   AdminModal,
+  AdminResponsiveList,
+  AdminListCard,
 } from "@/components/admin/ui";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
@@ -125,38 +126,69 @@ export default async function CashflowPage() {
         </AdminCard>
       </div>
 
-      <AdminTableWrap>
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Account</th>
-              <th>Type</th>
-              <th>Category</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((e) => (
-              <tr key={e.id}>
-                <td>{formatDate(e.entryDate)}</td>
-                <td>{e.account.name}</td>
-                <td>{e.type}</td>
-                <td>
-                  {e.category}
+      <AdminResponsiveList
+        cards={
+          entries.length ? (
+            entries.map((e) => (
+              <AdminListCard key={e.id}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-[var(--admin-muted)]">{formatDate(e.entryDate)}</p>
+                    <p className="font-medium text-gray-900">{e.account.name}</p>
+                    <p className="mt-0.5 text-xs text-[var(--admin-muted)]">{e.type}</p>
+                  </div>
+                  <p className="shrink-0 font-semibold text-[var(--admin-navy)]">
+                    {formatINR(Number(e.amount))}
+                  </p>
+                </div>
+                <div className="mt-3 text-sm">
+                  <p className="text-xs text-[var(--admin-muted)]">Category</p>
+                  <p>{e.category || "—"}</p>
                   {e.description ? (
-                    <span className="block text-xs text-[var(--admin-muted)]">{e.description}</span>
+                    <p className="mt-1 text-xs text-[var(--admin-muted)]">{e.description}</p>
                   ) : null}
-                </td>
-                <td>{formatINR(Number(e.amount))}</td>
+                </div>
+              </AdminListCard>
+            ))
+          ) : (
+            <AdminListCard>
+              <p className="text-center text-sm text-[var(--admin-muted)]">No cashflow entries yet.</p>
+            </AdminListCard>
+          )
+        }
+        table={
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Account</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Amount</th>
               </tr>
-            ))}
-            {!entries.length ? (
-              <AdminEmptyRow colSpan={5} message="No cashflow entries yet." />
-            ) : null}
-          </tbody>
-        </table>
-      </AdminTableWrap>
+            </thead>
+            <tbody>
+              {entries.map((e) => (
+                <tr key={e.id}>
+                  <td>{formatDate(e.entryDate)}</td>
+                  <td>{e.account.name}</td>
+                  <td>{e.type}</td>
+                  <td>
+                    {e.category}
+                    {e.description ? (
+                      <span className="block text-xs text-[var(--admin-muted)]">{e.description}</span>
+                    ) : null}
+                  </td>
+                  <td>{formatINR(Number(e.amount))}</td>
+                </tr>
+              ))}
+              {!entries.length ? (
+                <AdminEmptyRow colSpan={5} message="No cashflow entries yet." />
+              ) : null}
+            </tbody>
+          </table>
+        }
+      />
     </div>
   );
 }

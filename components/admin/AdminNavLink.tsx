@@ -21,18 +21,21 @@ export function AdminNavLink({
   children,
   className,
   title,
+  onClick,
 }: {
   href: string;
   active: boolean;
   children: React.ReactNode;
   className?: string;
   title?: string;
+  onClick?: () => void;
 }) {
   return (
     <Link
       href={href}
       prefetch
       title={title}
+      onClick={onClick}
       className={cn(
         "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition",
         active

@@ -37,7 +37,7 @@ export function CmsAddAchievementModal() {
         setOpen(next);
         if (!next) setError(null);
       }}
-      className="!w-[32rem]"
+      className="!max-w-lg"
     >
       <form
         className="space-y-3"
@@ -124,7 +124,7 @@ export function CmsAddGalleryModal({
         setOpen(next);
         if (!next) setError(null);
       }}
-      className="!w-[32rem]"
+      className="!max-w-lg"
     >
       <form
         className="space-y-3"
@@ -197,7 +197,7 @@ export function CmsAddVideoModal({
         setOpen(next);
         if (!next) setError(null);
       }}
-      className="!w-[32rem]"
+      className="!max-w-lg"
     >
       <form
         className="space-y-3"
@@ -343,7 +343,7 @@ function CmsLeadershipFormModal({
       trigger={trigger}
       open={open}
       onOpenChange={setOpen}
-      className="!w-[32rem]"
+      className="!max-w-lg"
     >
       <form
         key={person?.id ?? "new"}

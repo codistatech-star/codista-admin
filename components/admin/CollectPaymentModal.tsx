@@ -35,7 +35,7 @@ export function CollectPaymentModal({
       triggerClassName={triggerClassName}
       open={open}
       onOpenChange={onOpenChange}
-      className={className ?? "!w-[32rem]"}
+      className={className ?? "!max-w-lg"}
     >
       <CollectPaymentForm
         key={memberId ?? "pick"}
