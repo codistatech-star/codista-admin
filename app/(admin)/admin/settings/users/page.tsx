@@ -9,13 +9,10 @@ import {
   AdminResponsiveList,
   AdminListCard,
 } from "@/components/admin/ui";
+import { UserRowActions } from "@/components/admin/UserRowActions";
 import { requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
-import {
-  createBranchAdmin,
-  reactivateBranchAdmin,
-  revokeBranchAdmin,
-} from "../../actions";
+import { createBranchAdmin } from "../../actions";
 
 export default async function UsersPage() {
   const user = await requireSession();
@@ -29,6 +26,8 @@ export default async function UsersPage() {
       orderBy: { name: "asc" },
     }),
   ]);
+
+  const branchOptions = branches.map((b) => ({ id: b.id, name: b.name }));
 
   return (
     <div className="space-y-6">
@@ -86,21 +85,16 @@ export default async function UsersPage() {
                   </span>
                 </div>
                 <div className="mt-3 flex justify-end border-t border-[var(--admin-border)] pt-3">
-                  {u.isActive ? (
-                    <form action={revokeBranchAdmin}>
-                      <input type="hidden" name="id" value={u.id} />
-                      <SubmitButton variant="danger" pendingLabel="Revoking…">
-                        Deactivate
-                      </SubmitButton>
-                    </form>
-                  ) : (
-                    <form action={reactivateBranchAdmin}>
-                      <input type="hidden" name="id" value={u.id} />
-                      <SubmitButton variant="danger" pendingLabel="Reactivating…">
-                        Activate
-                      </SubmitButton>
-                    </form>
-                  )}
+                  <UserRowActions
+                    user={{
+                      id: u.id,
+                      name: u.name,
+                      email: u.email,
+                      isActive: u.isActive,
+                      branchIds: u.branches.map((b) => b.branchId),
+                    }}
+                    branches={branchOptions}
+                  />
                 </div>
               </AdminListCard>
             ))
@@ -135,21 +129,16 @@ export default async function UsersPage() {
                     </span>
                   </td>
                   <td>
-                    {u.isActive ? (
-                      <form action={revokeBranchAdmin}>
-                        <input type="hidden" name="id" value={u.id} />
-                        <SubmitButton variant="danger" pendingLabel="Revoking…">
-                          Deactivate
-                        </SubmitButton>
-                      </form>
-                    ) : (
-                      <form action={reactivateBranchAdmin}>
-                        <input type="hidden" name="id" value={u.id} />
-                        <SubmitButton variant="danger" pendingLabel="Reactivating…">
-                          Activate
-                        </SubmitButton>
-                      </form>
-                    )}
+                    <UserRowActions
+                      user={{
+                        id: u.id,
+                        name: u.name,
+                        email: u.email,
+                        isActive: u.isActive,
+                        branchIds: u.branches.map((b) => b.branchId),
+                      }}
+                      branches={branchOptions}
+                    />
                   </td>
                 </tr>
               ))}

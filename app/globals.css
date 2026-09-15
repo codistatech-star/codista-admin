@@ -899,3 +899,42 @@
   background: rgba(255, 255, 255, 0.28);
   border-radius: 999px;
 }
+
+/* Thin scrollbars for light admin surfaces (main, tables, lists) */
+.admin-app {
+  scrollbar-width: thin;
+  scrollbar-color: #c5cad3 transparent;
+}
+
+.admin-app * {
+  scrollbar-width: thin;
+}
+
+.admin-app ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.admin-app ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-app ::-webkit-scrollbar-thumb {
+  background: #c5cad3;
+  border-radius: 999px;
+}
+
+.admin-app ::-webkit-scrollbar-thumb:hover {
+  background: #9aa3b2;
+}
+
+/* Keep sidebar thumb light-on-navy (more specific than general rule) */
+.admin-app .admin-sidebar-nav,
+.admin-app .admin-sidebar-nav * {
+  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
+.admin-app .admin-sidebar-nav::-webkit-scrollbar-thumb,
+.admin-app .admin-sidebar-nav *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.28);
+}

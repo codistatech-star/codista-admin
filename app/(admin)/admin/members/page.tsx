@@ -105,26 +105,28 @@ export default async function MembersPage({
               placeholder="Search name / code / mobile"
               defaultValue={sp.q}
             />
-            <AdminSelect
-              className="w-full md:max-w-xs"
-              name="batchId"
-              defaultValue={sp.batchId ?? ""}
-              placeholder="All batches"
-              options={batches.map((b) => ({ value: b.id, label: b.name }))}
-            />
-            <AdminSelect
-              className="w-full md:max-w-xs"
-              name="status"
-              defaultValue={statusFilter}
-              placeholder="All statuses"
-              options={[
-                { value: "ACTIVE", label: "Active" },
-                { value: "EXPIRING", label: "Expiring" },
-                { value: "EXPIRED", label: "Expired" },
-                { value: "INACTIVE", label: "Inactive" },
-                { value: "NONE", label: "No membership" },
-              ]}
-            />
+            <div className="flex w-full gap-3 md:w-auto">
+              <AdminSelect
+                className="min-w-0 flex-1 md:w-auto md:min-w-[12rem] md:max-w-xs md:flex-none"
+                name="batchId"
+                defaultValue={sp.batchId ?? ""}
+                placeholder="All batches"
+                options={batches.map((b) => ({ value: b.id, label: b.name }))}
+              />
+              <AdminSelect
+                className="min-w-0 flex-1 md:w-auto md:min-w-[12rem] md:max-w-xs md:flex-none"
+                name="status"
+                defaultValue={statusFilter}
+                placeholder="All statuses"
+                options={[
+                  { value: "ACTIVE", label: "Active" },
+                  { value: "EXPIRING", label: "Expiring" },
+                  { value: "EXPIRED", label: "Expired" },
+                  { value: "INACTIVE", label: "Inactive" },
+                  { value: "NONE", label: "No membership" },
+                ]}
+              />
+            </div>
             <SubmitButton pendingLabel="Filtering…">Filter</SubmitButton>
           </form>
         </AdminCard>

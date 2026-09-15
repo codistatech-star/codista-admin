@@ -19,8 +19,15 @@ type NavIconName =
 type NavChild = { href: string; label: string; adminOnly?: boolean };
 
 type NavItem =
-  | { kind: "link"; href: string; label: string; icon: NavIconName }
-  | { kind: "group"; id: string; label: string; icon: NavIconName; children: NavChild[] };
+  | { kind: "link"; href: string; label: string; icon: NavIconName; adminOnly?: boolean }
+  | {
+      kind: "group";
+      id: string;
+      label: string;
+      icon: NavIconName;
+      adminOnly?: boolean;
+      children: NavChild[];
+    };
 
 const OPEN_KEY = "codista-admin-nav";
 const COLLAPSE_KEY = "codista-admin-sidebar-collapsed";
@@ -69,14 +76,15 @@ const navItems: NavItem[] = [
     id: "settings",
     label: "Settings",
     icon: "settings",
+    adminOnly: true,
     children: [
-      { href: "/admin/settings/fee-rules", label: "Fee rules", adminOnly: true },
+      { href: "/admin/settings/fee-rules", label: "Fee rules" },
       { href: "/admin/settings/class-plans", label: "Class plans" },
       { href: "/admin/settings/extra-classes", label: "Extra classes" },
       { href: "/admin/settings/batches", label: "Batches" },
       { href: "/admin/settings/belts", label: "Belt grades" },
-      { href: "/admin/settings/branches", label: "Branches", adminOnly: true },
-      { href: "/admin/settings/users", label: "Users", adminOnly: true },
+      { href: "/admin/settings/branches", label: "Branches" },
+      { href: "/admin/settings/users", label: "Users" },
     ],
   },
 ];
@@ -322,6 +330,8 @@ export function AdminSidebar({
 
       <nav className="admin-sidebar-nav min-h-0 flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-2 py-3">
         {navItems.map((item) => {
+          if (item.adminOnly && !isAdmin) return null;
+
           if (item.kind === "link") {
             const active = pathMatches(item.href, pathname);
             return (

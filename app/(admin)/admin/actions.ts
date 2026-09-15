@@ -192,6 +192,45 @@ export async function reactivateBranchAdmin(formData: FormData) {
   revalidatePath("/admin/settings", "layout");
 }
 
+export async function updateBranchAdmin(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const existing = await prisma.user.findUniqueOrThrow({ where: { id } });
+  if (existing.role === Role.ADMIN) throw new Error("Cannot edit Admin");
+
+  const email = String(formData.get("email")).toLowerCase().trim();
+  const name = String(formData.get("name")).trim();
+  const branchIds = formData.getAll("branchIds").map(String);
+
+  if (!name || !email) throw new Error("Name and email are required");
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id },
+      data: { name, email },
+    }),
+    prisma.userBranch.deleteMany({ where: { userId: id } }),
+    prisma.userBranch.createMany({
+      data: branchIds.map((branchId) => ({ userId: id, branchId })),
+    }),
+  ]);
+
+  revalidatePath("/admin/settings", "layout");
+}
+
+export async function resetBranchAdminPassword(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const password = String(formData.get("password"));
+  const existing = await prisma.user.findUniqueOrThrow({ where: { id } });
+  if (existing.role === Role.ADMIN) throw new Error("Cannot reset Admin password here");
+  if (!password || password.length < 6) throw new Error("Password must be at least 6 characters");
+
+  const passwordHash = await hash(password, 12);
+  await prisma.user.update({ where: { id }, data: { passwordHash } });
+  revalidatePath("/admin/settings", "layout");
+}
+
 export async function saveMember(formData: FormData) {
   const user = await requireSession();
   const branchId = (await getActiveBranchId(user))!;
