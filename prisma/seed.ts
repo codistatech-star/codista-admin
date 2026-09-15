@@ -22,6 +22,26 @@ async function main() {
     },
   });
 
+  const superEmail = "superadmin@codista.in";
+  const superPassword = "Superadmin@123";
+  const superPasswordHash = await hash(superPassword, 12);
+  const superAdmin = await prisma.user.upsert({
+    where: { email: superEmail },
+    update: {
+      name: "Codista Super Admin",
+      passwordHash: superPasswordHash,
+      role: Role.ADMIN,
+      isActive: true,
+    },
+    create: {
+      email: superEmail,
+      name: "Codista Super Admin",
+      passwordHash: superPasswordHash,
+      role: Role.ADMIN,
+      isActive: true,
+    },
+  });
+
   const hq = await prisma.branch.upsert({
     where: { id: "branch-hq" },
     update: {},
@@ -38,6 +58,12 @@ async function main() {
     where: { userId_branchId: { userId: admin.id, branchId: hq.id } },
     update: {},
     create: { userId: admin.id, branchId: hq.id },
+  });
+
+  await prisma.userBranch.upsert({
+    where: { userId_branchId: { userId: superAdmin.id, branchId: hq.id } },
+    update: {},
+    create: { userId: superAdmin.id, branchId: hq.id },
   });
 
   const plans = [
@@ -144,6 +170,7 @@ async function main() {
   }
 
   console.log(`Seeded admin ${email} / ${password}`);
+  console.log(`Seeded admin ${superEmail} / ${superPassword}`);
   console.log(`HQ branch: ${hq.name}`);
 }
 
