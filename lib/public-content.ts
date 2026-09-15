@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 
-/** Public CMS content (achievements, gallery, videos, leadership). */
+/** Public CMS content (achievements, gallery, videos, leadership, events). */
 export async function getPublicSiteData() {
-  const [achievements, gallery, videos, leadership] = await Promise.all([
+  const now = new Date();
+  const [achievements, gallery, videos, leadership, events] = await Promise.all([
     prisma.achievement.findMany({
       where: { isPublished: true },
       orderBy: [{ featured: "desc" }, { year: "desc" }],
@@ -19,7 +20,11 @@ export async function getPublicSiteData() {
       where: { isPublished: true },
       orderBy: { sortOrder: "asc" },
     }),
+    prisma.siteEvent.findMany({
+      where: { isPublished: true, startsAt: { gte: now } },
+      orderBy: { startsAt: "asc" },
+    }),
   ]);
 
-  return { achievements, gallery, videos, leadership };
+  return { achievements, gallery, videos, leadership, events };
 }

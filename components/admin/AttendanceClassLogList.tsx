@@ -14,16 +14,9 @@ export type AttendanceClassLogRow = {
   takenBy: string | null;
 };
 
-export function AttendanceClassLogList({
-  sessions,
-  fill,
-}: {
-  sessions: AttendanceClassLogRow[];
-  fill?: boolean;
-}) {
+export function AttendanceClassLogList({ sessions }: { sessions: AttendanceClassLogRow[] }) {
   return (
     <AdminResponsiveList
-      fill={fill}
       cards={
         sessions.length ? (
           sessions.map((s) => (

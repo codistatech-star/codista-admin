@@ -69,65 +69,55 @@ export default async function PaymentReportPage({
 
   return (
     <AdminFillPage>
-      <div className="shrink-0 space-y-3 pb-4 md:space-y-4">
-        <PageHeader
-          className="!mb-0"
-          title="Payment report"
-          description={`Collections — ${reportMonthLabel(start)}`}
-          actions={<ReportMonthPicker month={month} />}
-        />
+      <PageHeader
+        className="!mb-3"
+        title="Payment report"
+        description={`Collections — ${reportMonthLabel(start)}`}
+        actions={<ReportMonthPicker month={month} />}
+      />
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-          <AdminCard className="p-3 md:p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              Month collections
-            </p>
-            <p className="mt-1 text-xl font-semibold text-[var(--admin-navy)] md:mt-2 md:text-2xl">
-              {formatINR(total)}
-            </p>
-            <p className="mt-0.5 text-[10px] text-[var(--admin-muted)] md:mt-1 md:text-sm">
-              {collections.length} receipts
-            </p>
-          </AdminCard>
-          <AdminCard className="p-3 md:p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              By mode
-            </p>
-            <ul className="mt-2 space-y-1 text-xs text-[var(--admin-muted)] md:mt-3 md:text-sm">
-              {Object.entries(byMode).map(([mode, amt]) => (
-                <li key={mode} className="flex justify-between gap-2">
-                  <span>{mode}</span>
-                  <span className="font-medium text-gray-900">{formatINR(amt)}</span>
-                </li>
-              ))}
-              {!Object.keys(byMode).length ? <li>No collections this month</li> : null}
-            </ul>
-          </AdminCard>
-          <Link
-            href={`/admin/reports/stock?month=${month}`}
-            className="admin-card col-span-2 block p-3 transition hover:border-[var(--admin-navy)] md:col-span-1 md:p-5"
+      <div className="grid gap-4 md:grid-cols-3">
+        <AdminCard>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Month collections
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--admin-navy)]">{formatINR(total)}</p>
+          <p className="mt-1 text-sm text-[var(--admin-muted)]">{collections.length} receipts</p>
+        </AdminCard>
+        <AdminCard>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">By mode</p>
+          <ul className="mt-3 space-y-1 text-sm text-[var(--admin-muted)]">
+            {Object.entries(byMode).map(([mode, amt]) => (
+              <li key={mode} className="flex justify-between">
+                <span>{mode}</span>
+                <span className="font-medium text-gray-900">{formatINR(amt)}</span>
+              </li>
+            ))}
+            {!Object.keys(byMode).length ? <li>No collections this month</li> : null}
+          </ul>
+        </AdminCard>
+        <Link
+          href={`/admin/reports/stock?month=${month}`}
+          className="admin-card block transition hover:border-[var(--admin-navy)]"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Stock profit
+          </p>
+          <p
+            className={`mt-2 text-2xl font-semibold ${
+              stockSales.profit >= 0 ? "text-emerald-600" : "text-[var(--admin-red)]"
+            }`}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              Stock profit
-            </p>
-            <p
-              className={`mt-1 text-xl font-semibold md:mt-2 md:text-2xl ${
-                stockSales.profit >= 0 ? "text-emerald-600" : "text-[var(--admin-red)]"
-              }`}
-            >
-              {formatINR(stockSales.profit)}
-            </p>
-            <p className="mt-0.5 text-[10px] text-[var(--admin-muted)] md:mt-1 md:text-sm">
-              Sales {formatINR(stockSales.revenue)} · Cost {formatINR(stockSales.cost)} ·{" "}
-              {stockSales.unitsSold} units
-            </p>
-          </Link>
-        </div>
+            {formatINR(stockSales.profit)}
+          </p>
+          <p className="mt-1 text-sm text-[var(--admin-muted)]">
+            Sales {formatINR(stockSales.revenue)} · Cost {formatINR(stockSales.cost)} ·{" "}
+            {stockSales.unitsSold} units
+          </p>
+        </Link>
       </div>
 
-      <div className="min-h-0 flex-1">
-        <PaymentReportList collections={rows} fill />
-      </div>
+      <PaymentReportList collections={rows} />
     </AdminFillPage>
   );
 }

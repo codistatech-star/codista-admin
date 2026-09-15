@@ -29,15 +29,9 @@ export type PaymentReportRow = {
   notes: string | null;
 };
 
-export function PaymentReportList({
-  collections,
-  fill,
-}: {
-  collections: PaymentReportRow[];
-  fill?: boolean;
-}) {
+export function PaymentReportList({ collections }: { collections: PaymentReportRow[] }) {
   return (
-    <AdminListSearch fill={fill} placeholder="Search receipt, member, mode…">
+    <AdminListSearch sticky placeholder="Search receipt, member, mode…">
       {(q) => {
         const filtered = collections.filter((p) =>
           matchesSearch(
@@ -53,7 +47,6 @@ export function PaymentReportList({
 
         return (
           <AdminResponsiveList
-            fill={fill}
             cards={
               filtered.length ? (
                 filtered.map((p) => (

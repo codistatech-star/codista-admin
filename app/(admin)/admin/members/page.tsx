@@ -3,6 +3,7 @@ import {
   PageHeader,
   AdminCard,
   AdminFillPage,
+  AdminStickyDock,
   SubmitButton,
   AdminSelect,
   AdminEmptyRow,
@@ -84,18 +85,18 @@ export default async function MembersPage({
 
   return (
     <AdminFillPage>
-      <div className="shrink-0 space-y-4 pb-4">
-        <PageHeader
-          className="!mb-0"
-          title="Members"
-          description={`${filtered.length} shown`}
-          actions={
-            <Link href="/admin/members/new" className="btn-primary">
-              Add member
-            </Link>
-          }
-        />
+      <PageHeader
+        className="!mb-3"
+        title="Members"
+        description={`${filtered.length} shown`}
+        actions={
+          <Link href="/admin/members/new" className="btn-primary">
+            Add member
+          </Link>
+        }
+      />
 
+      <AdminStickyDock>
         <AdminCard>
           <form className="flex flex-wrap gap-3">
             <input
@@ -127,11 +128,9 @@ export default async function MembersPage({
             <SubmitButton pendingLabel="Filtering…">Filter</SubmitButton>
           </form>
         </AdminCard>
-      </div>
+      </AdminStickyDock>
 
-      <div className="min-h-0 flex-1">
       <AdminResponsiveList
-        fill
         cards={
           filtered.length ? (
             filtered.map((m) => {
@@ -226,7 +225,6 @@ export default async function MembersPage({
           </table>
         }
       />
-      </div>
     </AdminFillPage>
   );
 }

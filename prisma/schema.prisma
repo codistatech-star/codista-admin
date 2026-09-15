@@ -400,6 +400,21 @@ model LeadershipPerson {
   isPublished Boolean @default(true)
 }
 
+model SiteEvent {
+  id              String   @id @default(cuid())
+  title           String
+  startsAt        DateTime
+  venue           String
+  description     String?
+  imageUrl        String?
+  registrationUrl String?
+  showOnHome      Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  isPublished     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 model TrialLead {
   id        String   @id @default(cuid())
   name      String

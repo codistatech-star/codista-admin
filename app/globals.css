@@ -229,10 +229,19 @@
 }
 
 .admin-app .admin-table-wrap {
-  overflow-x: auto;
+  overflow: auto;
+  max-height: min(70dvh, calc(100dvh - 10rem));
   border-radius: 0.75rem;
   border: 1px solid var(--admin-border);
   background: #fff;
+}
+
+@media (max-width: 767px) {
+  .admin-app .admin-table-wrap {
+    max-height: none;
+    overflow-x: auto;
+    overflow-y: visible;
+  }
 }
 
 .admin-app .admin-empty-row {

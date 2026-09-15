@@ -25,6 +25,9 @@ export function PublicHeader() {
           <a className="hover:text-crimson" href="/#leadership">
             Leadership
           </a>
+          <Link className="hover:text-crimson" href="/events">
+            Events
+          </Link>
           <Link className="hover:text-crimson" href="/journey">
             Our Journey
           </Link>

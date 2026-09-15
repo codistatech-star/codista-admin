@@ -2,6 +2,7 @@ import {
   PageHeader,
   AdminCard,
   AdminFillPage,
+  AdminStickyDock,
   SubmitButton,
   AdminSelect,
   AdminDatePicker,
@@ -132,13 +133,13 @@ export default async function AttendancePage({
 
   return (
     <AdminFillPage>
-      <div className="shrink-0 space-y-4 pb-4">
-        <PageHeader
-          className="!mb-0"
-          title="Attendance"
-          description="Mark by date and batch. Roster = members mapped to that batch."
-        />
+      <PageHeader
+        className="!mb-3"
+        title="Attendance"
+        description="Mark by date and batch. Roster = members mapped to that batch."
+      />
 
+      <AdminStickyDock>
         <AdminCard>
           <form className="flex flex-wrap gap-3">
             <label className="admin-label w-full md:w-auto">
@@ -157,13 +158,11 @@ export default async function AttendancePage({
             <SubmitButton className="self-end">Load roster</SubmitButton>
           </form>
         </AdminCard>
-      </div>
+      </AdminStickyDock>
 
       {batchId ? (
         <>
-          <div className="min-h-0 flex-1">
           <AdminResponsiveList
-            fill
             cards={
               roster.length ? (
                 roster.map((m) => (
@@ -215,9 +214,8 @@ export default async function AttendancePage({
               </table>
             }
           />
-          </div>
           {sessionId ? (
-            <p className="mt-3 shrink-0 border border-[var(--admin-border)] bg-white px-4 py-2 text-xs text-[var(--admin-muted)]">
+            <p className="border border-[var(--admin-border)] bg-white px-4 py-2 text-xs text-[var(--admin-muted)]">
               Session saved. Taken by defaults to you. Users available: {users.length}.
             </p>
           ) : null}

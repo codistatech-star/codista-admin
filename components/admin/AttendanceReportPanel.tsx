@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AdminCard } from "@/components/admin/ui";
+import { AdminCard, AdminStickyDock } from "@/components/admin/ui";
 import { AttendanceClassLogList, type AttendanceClassLogRow } from "@/components/admin/AttendanceClassLogList";
 import { AttendanceMembersList } from "@/components/admin/AttendanceMembersList";
 import { AttendanceReportPager } from "@/components/admin/AttendanceReportPager";
@@ -41,14 +41,12 @@ export function AttendanceReportPanel({
   initialTab,
   initialQ = "",
   initialPage = 1,
-  fill = false,
 }: {
   members: AttendanceMemberStat[];
   sessions: AttendanceClassLogRow[];
   initialTab: AttendanceReportTab;
   initialQ?: string;
   initialPage?: number;
-  fill?: boolean;
 }) {
   const [tab, setTab] = useState<AttendanceReportTab>(initialTab);
   const [q, setQ] = useState(initialQ);
@@ -110,8 +108,8 @@ export function AttendanceReportPanel({
   }, []);
 
   return (
-    <AdminCard className={fill ? "flex min-h-0 flex-1 flex-col overflow-hidden" : undefined}>
-      <div className="mb-4 shrink-0 space-y-3">
+    <AdminCard>
+      <AdminStickyDock className="mb-4 rounded-lg bg-white">
         <AttendanceReportTabs active={tab} onSelect={selectTab} />
         <p className="text-sm text-[var(--admin-muted)]">{description}</p>
         <AttendanceReportSearch
@@ -121,17 +119,15 @@ export function AttendanceReportPanel({
           value={q}
           onSearch={applySearch}
         />
-      </div>
+      </AdminStickyDock>
 
-      <div className={fill ? "min-h-0 flex-1" : undefined}>
-        {tab === "members" ? (
-          <AttendanceMembersList members={pagedMembers} fill={fill} />
-        ) : (
-          <AttendanceClassLogList sessions={pagedSessions} fill={fill} />
-        )}
-      </div>
+      {tab === "members" ? (
+        <AttendanceMembersList members={pagedMembers} />
+      ) : (
+        <AttendanceClassLogList sessions={pagedSessions} />
+      )}
 
-      <div className="mt-4 shrink-0">
+      <div className="mt-4">
         <AttendanceReportPager
           page={safePage}
           pageSize={pageSize}

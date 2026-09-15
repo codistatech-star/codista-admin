@@ -302,10 +302,16 @@ export async function addCashEntry(formData: FormData) {
   revalidatePath("/admin/dashboard");
 }
 
-function revalidateJourney() {
+function revalidatePublicSite() {
   revalidatePath("/admin/cms", "layout");
   revalidatePath("/");
   revalidatePath("/journey");
+  revalidatePath("/events");
+}
+
+/** @deprecated use revalidatePublicSite */
+function revalidateJourney() {
+  revalidatePublicSite();
 }
 
 export async function upsertAchievement(formData: FormData) {
@@ -472,6 +478,98 @@ export async function deleteLeadershipPerson(formData: FormData) {
   }
   await prisma.leadershipPerson.delete({ where: { id } });
   revalidateJourney();
+}
+
+function parseRegistrationUrl(raw: string): string | null {
+  const value = raw.trim();
+  if (!value) return null;
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("Registration link must be a valid URL");
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error("Registration link must start with http:// or https://");
+  }
+  return url.toString();
+}
+
+/** datetime-local is local wall time without timezone; treat as local Date. */
+function parseStartsAt(raw: string): Date {
+  const value = raw.trim();
+  if (!value) throw new Error("Date and time are required");
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new Error("Invalid date and time");
+  return date;
+}
+
+export async function upsertSiteEvent(formData: FormData) {
+  await requireSession();
+  const id = String(formData.get("id") || "").trim();
+  const title = String(formData.get("title") || "").trim();
+  const venue = String(formData.get("venue") || "").trim();
+  if (!title || !venue) throw new Error("Title and venue are required");
+
+  const startsAt = parseStartsAt(String(formData.get("startsAt") || ""));
+  const description = String(formData.get("description") || "").trim() || null;
+  const imageUrl = String(formData.get("imageUrl") || "").trim() || null;
+  const registrationUrl = parseRegistrationUrl(String(formData.get("registrationUrl") || ""));
+  const showOnHome = formData.get("showOnHome") === "on";
+  const isPublished = formData.get("isPublished") === "on";
+
+  if (id) {
+    const existing = await prisma.siteEvent.findUnique({ where: { id } });
+    if (!existing) throw new Error("Event not found");
+    if (existing.imageUrl && imageUrl && existing.imageUrl !== imageUrl) {
+      const { deleteR2ObjectByUrl } = await import("@/lib/r2");
+      await deleteR2ObjectByUrl(existing.imageUrl);
+    }
+    await prisma.siteEvent.update({
+      where: { id },
+      data: {
+        title,
+        startsAt,
+        venue,
+        description,
+        imageUrl: imageUrl ?? existing.imageUrl,
+        registrationUrl,
+        showOnHome,
+        isPublished,
+      },
+    });
+  } else {
+    const { CMS_LIMITS } = await import("@/lib/cms-limits");
+    const count = await prisma.siteEvent.count();
+    if (count >= CMS_LIMITS.events) {
+      throw new Error(`Events are limited to ${CMS_LIMITS.events}`);
+    }
+    await prisma.siteEvent.create({
+      data: {
+        title,
+        startsAt,
+        venue,
+        description,
+        imageUrl,
+        registrationUrl,
+        showOnHome,
+        isPublished,
+      },
+    });
+  }
+  revalidatePublicSite();
+}
+
+export async function deleteSiteEvent(formData: FormData) {
+  await requireSession();
+  const id = String(formData.get("id"));
+  const existing = await prisma.siteEvent.findUnique({ where: { id } });
+  if (existing?.imageUrl) {
+    const { deleteR2ObjectByUrl } = await import("@/lib/r2");
+    await deleteR2ObjectByUrl(existing.imageUrl);
+  }
+  await prisma.siteEvent.delete({ where: { id } });
+  revalidatePublicSite();
 }
 
 export async function saveTrialLead(formData: FormData) {

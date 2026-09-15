@@ -102,53 +102,47 @@ export default async function AttendanceReportPage({
 
   return (
     <AdminFillPage>
-      <div className="shrink-0 space-y-4 pb-4">
-        <PageHeader
-          className="!mb-0"
-          title="Attendance report"
-          description={`Member attendance — ${reportMonthLabel(start)}`}
-          actions={
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <ReportBatchFilter
-                month={month}
-                batch={batchFilter ?? ""}
-                options={batchOptions}
-              />
-              <ReportMonthPicker month={month} />
-            </div>
-          }
-        />
+      <PageHeader
+        className="!mb-3"
+        title="Attendance report"
+        description={`Member attendance — ${reportMonthLabel(start)}`}
+        actions={
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <ReportBatchFilter
+              month={month}
+              batch={batchFilter ?? ""}
+              options={batchOptions}
+            />
+            <ReportMonthPicker month={month} />
+          </div>
+        }
+      />
 
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-          <AdminCard className="p-3 md:p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              Overall attendance
-            </p>
-            <p className="mt-1 text-xl font-semibold text-[var(--admin-navy)] md:mt-2 md:text-2xl">
-              {report.overallPct != null ? `${report.overallPct}%` : "—"}
-            </p>
-            <p className="mt-0.5 text-[10px] text-[var(--admin-muted)] md:mt-1 md:text-xs">
-              {report.totalPresentMarks}/{report.totalPossibleMarks} present marks
-            </p>
-          </AdminCard>
-          <AdminCard className="p-3 md:p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              Below 70%
-            </p>
-            <p className="mt-1 text-xl font-semibold text-[var(--admin-red)] md:mt-2 md:text-2xl">
-              {report.below70}
-            </p>
-            <p className="mt-0.5 text-[10px] text-[var(--admin-muted)] md:mt-1 md:text-xs">members</p>
-          </AdminCard>
-          <AdminCard className="col-span-2 p-3 md:col-span-1 md:p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              Sessions held
-            </p>
-            <p className="mt-1 text-xl font-semibold text-[var(--admin-navy)] md:mt-2 md:text-2xl">
-              {report.sessionsHeld}
-            </p>
-          </AdminCard>
-        </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <AdminCard>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Overall attendance
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--admin-navy)]">
+            {report.overallPct != null ? `${report.overallPct}%` : "—"}
+          </p>
+          <p className="mt-1 text-xs text-[var(--admin-muted)]">
+            {report.totalPresentMarks}/{report.totalPossibleMarks} present marks
+          </p>
+        </AdminCard>
+        <AdminCard>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Below 70%
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--admin-red)]">{report.below70}</p>
+          <p className="mt-1 text-xs text-[var(--admin-muted)]">members</p>
+        </AdminCard>
+        <AdminCard>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Sessions held
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--admin-navy)]">{report.sessionsHeld}</p>
+        </AdminCard>
       </div>
 
       <AttendanceReportPanel
@@ -157,7 +151,6 @@ export default async function AttendanceReportPage({
         initialTab={tab}
         initialQ={q}
         initialPage={page}
-        fill
       />
     </AdminFillPage>
   );

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BackgroundMotifs } from "@/components/public/BackgroundMotifs";
+import { EventCard } from "@/components/public/EventCard";
 import { PublicFooter, PublicHeader } from "@/components/public/SiteChrome";
 import { HeroBanner } from "@/components/public/HeroBanner";
 import { SafeImage } from "@/components/public/SafeImage";
@@ -14,9 +15,10 @@ import {
 import { getPublicSiteData } from "@/lib/public-content";
 
 export default async function HomePage() {
-  const { achievements, gallery, leadership } = await getPublicSiteData();
+  const { achievements, gallery, leadership, events } = await getPublicSiteData();
 
   const featuredAchievements = achievements.filter((a) => a.featured).slice(0, 3);
+  const homeEvents = events.filter((e) => e.showOnHome).slice(0, 3);
   const teaserGallery = ["TRAINING", "EVENTS", "MEDALS"]
     .map((cat) => gallery.find((g) => g.category === cat))
     .filter(Boolean);
@@ -130,6 +132,27 @@ export default async function HomePage() {
               </div>
             </div>
           </section>
+
+          {homeEvents.length ? (
+            <section id="events" className="px-4 py-12 md:px-8">
+              <div className="mx-auto max-w-6xl">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="section-kicker">Upcoming events</p>
+                    <h2 className="mt-3 text-3xl md:text-5xl">Train. Compete. Grow.</h2>
+                  </div>
+                  <Link href="/events" className="btn-secondary shrink-0">
+                    See all
+                  </Link>
+                </div>
+                <div className="mt-8 grid gap-5 md:grid-cols-3">
+                  {homeEvents.map((e) => (
+                    <EventCard key={e.id} event={e} />
+                  ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
 
           {leadership.length ? (
             <section id="leadership" className="px-4 py-12 md:px-8">

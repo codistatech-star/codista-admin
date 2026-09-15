@@ -121,7 +121,7 @@ export function AdminAppShell({
             "pb-[max(1rem,env(safe-area-inset-bottom))]",
           )}
         >
-          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip has-[[data-admin-fill-page]]:overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip">
             {children}
           </div>
         </main>

@@ -3,7 +3,7 @@ import { randomUUID } from "crypto";
 
 export { CMS_LIMITS } from "@/lib/cms-limits";
 
-export type R2Folder = "achievements" | "gallery" | "leadership";
+export type R2Folder = "achievements" | "gallery" | "leadership" | "events";
 
 function r2Config() {
   const accountId = process.env.R2_ACCOUNT_ID?.trim();

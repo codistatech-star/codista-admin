@@ -15,10 +15,12 @@ import {
   upsertGalleryImage,
   upsertVideo,
   upsertLeadershipPerson,
+  upsertSiteEvent,
   deleteAchievement,
   deleteGalleryImage,
   deleteVideo,
   deleteLeadershipPerson,
+  deleteSiteEvent,
 } from "@/app/(admin)/admin/cms-actions";
 
 export function CmsAddAchievementModal() {
@@ -303,6 +305,192 @@ export function CmsEditLeadershipModal({
   );
 }
 
+function toDatetimeLocalValue(date: Date | string) {
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+type SiteEventFormValues = {
+  id: string;
+  title: string;
+  startsAt: Date | string;
+  venue: string;
+  description: string | null;
+  imageUrl: string | null;
+  registrationUrl: string | null;
+  showOnHome: boolean;
+  isPublished: boolean;
+};
+
+export function CmsAddSiteEventModal({
+  disabled,
+  remaining,
+}: {
+  disabled?: boolean;
+  remaining: number;
+}) {
+  if (disabled) {
+    return (
+      <button type="button" className="btn-primary opacity-50" disabled>
+        Limit reached ({remaining} left)
+      </button>
+    );
+  }
+
+  return <CmsSiteEventFormModal trigger="Add event" title="Add event" />;
+}
+
+export function CmsEditSiteEventModal({ event }: { event: SiteEventFormValues }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <button
+        type="button"
+        className="admin-icon-btn"
+        title="Edit"
+        aria-label={`Edit ${event.title}`}
+        onClick={() => setOpen(true)}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+      <CmsSiteEventFormModal
+        title={`Edit — ${event.title}`}
+        open={open}
+        onOpenChange={setOpen}
+        event={event}
+      />
+    </>
+  );
+}
+
+function CmsSiteEventFormModal({
+  title,
+  trigger,
+  open: controlledOpen,
+  onOpenChange,
+  event,
+}: {
+  title: string;
+  trigger?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  event?: SiteEventFormValues;
+}) {
+  const router = useRouter();
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  function setOpen(next: boolean) {
+    if (!isControlled) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+    if (!next) setError(null);
+  }
+
+  return (
+    <AdminModal
+      title={title}
+      trigger={trigger}
+      open={open}
+      onOpenChange={setOpen}
+      className="!max-w-lg"
+    >
+      <form
+        key={event?.id ?? "new"}
+        className="space-y-3"
+        action={(fd) => {
+          setError(null);
+          startTransition(async () => {
+            try {
+              await upsertSiteEvent(fd);
+              setOpen(false);
+              router.refresh();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "Failed to save");
+            }
+          });
+        }}
+      >
+        {event ? <input type="hidden" name="id" value={event.id} /> : null}
+        <SquareImageUpload
+          folder="events"
+          name="imageUrl"
+          label="Image (optional)"
+          existingUrl={event?.imageUrl}
+        />
+        <label className="admin-label">
+          Title
+          <input className="admin-input mt-1" name="title" defaultValue={event?.title} required />
+        </label>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="admin-label">
+            Date &amp; time
+            <input
+              className="admin-input mt-1"
+              name="startsAt"
+              type="datetime-local"
+              defaultValue={event ? toDatetimeLocalValue(event.startsAt) : ""}
+              required
+            />
+          </label>
+          <label className="admin-label">
+            Venue
+            <input className="admin-input mt-1" name="venue" defaultValue={event?.venue} required />
+          </label>
+        </div>
+        <label className="admin-label">
+          Description
+          <textarea
+            className="admin-input mt-1"
+            name="description"
+            rows={3}
+            defaultValue={event?.description ?? ""}
+          />
+        </label>
+        <label className="admin-label">
+          Registration link
+          <input
+            className="admin-input mt-1"
+            name="registrationUrl"
+            type="url"
+            placeholder="https://"
+            defaultValue={event?.registrationUrl ?? ""}
+          />
+        </label>
+        <div className="flex flex-wrap gap-4">
+          <AdminCheckbox
+            name="isPublished"
+            label="Published"
+            defaultChecked={event?.isPublished ?? true}
+          />
+          <AdminCheckbox
+            name="showOnHome"
+            label="Show on home"
+            defaultChecked={event?.showOnHome ?? false}
+          />
+        </div>
+        {error ? <p className="text-sm text-[var(--admin-red)]">{error}</p> : null}
+        <SubmitButton className="w-full" disabled={pending}>
+          {pending ? "Saving…" : event ? "Save changes" : "Save event"}
+        </SubmitButton>
+      </form>
+    </AdminModal>
+  );
+}
+
 function CmsLeadershipFormModal({
   title,
   trigger,
@@ -416,7 +604,8 @@ export function CmsDeleteButton({
     | typeof deleteAchievement
     | typeof deleteGalleryImage
     | typeof deleteVideo
-    | typeof deleteLeadershipPerson;
+    | typeof deleteLeadershipPerson
+    | typeof deleteSiteEvent;
   confirmMessage: string;
   icon?: boolean;
 }) {

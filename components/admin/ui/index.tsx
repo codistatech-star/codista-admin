@@ -1,6 +1,7 @@
 export {
   PageHeader,
   AdminFillPage,
+  AdminStickyDock,
   AdminCard,
   AdminButton,
   AdminTableWrap,

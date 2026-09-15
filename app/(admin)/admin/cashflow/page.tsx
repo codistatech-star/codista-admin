@@ -55,47 +55,62 @@ export default async function CashflowPage() {
 
   return (
     <AdminFillPage>
-      <div className="shrink-0 space-y-3 pb-4 md:space-y-4">
-        <PageHeader
-          className="!mb-0"
-          title="Cashflow"
-          description="Today's income and expenses"
-          actions={
-            <AddCashEntryModal accountOptions={accountOptions} defaultDate={todayStr} />
-          }
-        />
+      <PageHeader
+        className="!mb-3"
+        title="Cashflow"
+        description="Today's income and expenses"
+        actions={
+          <AddCashEntryModal accountOptions={accountOptions} defaultDate={todayStr} />
+        }
+      />
 
-        <div className="grid grid-cols-3 gap-3 md:gap-4">
-          <AdminCard className="p-3 md:p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              Today income
-            </p>
-            <p className="mt-1 text-lg font-semibold text-emerald-600 md:mt-2 md:text-2xl">
-              {formatINR(todayIn)}
-            </p>
-          </AdminCard>
-          <AdminCard className="p-3 md:p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              Today expense
-            </p>
-            <p className="mt-1 text-lg font-semibold text-[var(--admin-red)] md:mt-2 md:text-2xl">
-              {formatINR(todayOut)}
-            </p>
-          </AdminCard>
-          <AdminCard className="p-3 md:p-5">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
-              Today net
-            </p>
-            <p className="mt-1 text-lg font-semibold text-[var(--admin-navy)] md:mt-2 md:text-2xl">
+      {/* Mobile: one summary card. Desktop: three KPI cards. */}
+      <AdminCard className="md:hidden">
+        <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+          Today
+        </p>
+        <dl className="mt-3 space-y-3 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <dt className="text-[var(--admin-muted)]">Income</dt>
+            <dd className="text-lg font-semibold text-emerald-600">{formatINR(todayIn)}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--admin-border)] pt-3">
+            <dt className="text-[var(--admin-muted)]">Expense</dt>
+            <dd className="text-lg font-semibold text-[var(--admin-red)]">{formatINR(todayOut)}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-[var(--admin-border)] pt-3">
+            <dt className="font-medium text-gray-900">Net</dt>
+            <dd className="text-lg font-semibold text-[var(--admin-navy)]">
               {formatINR(todayIn - todayOut)}
-            </p>
-          </AdminCard>
-        </div>
+            </dd>
+          </div>
+        </dl>
+      </AdminCard>
+
+      <div className="hidden gap-4 md:grid md:grid-cols-3">
+        <AdminCard>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Today income
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-emerald-600">{formatINR(todayIn)}</p>
+        </AdminCard>
+        <AdminCard>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Today expense
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--admin-red)]">{formatINR(todayOut)}</p>
+        </AdminCard>
+        <AdminCard>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Today net
+          </p>
+          <p className="mt-2 text-2xl font-semibold text-[var(--admin-navy)]">
+            {formatINR(todayIn - todayOut)}
+          </p>
+        </AdminCard>
       </div>
 
-      <div className="min-h-0 flex-1">
       <AdminResponsiveList
-        fill
         cards={
           entries.length ? (
             entries.map((e) => (
@@ -158,7 +173,6 @@ export default async function CashflowPage() {
           </table>
         }
       />
-      </div>
     </AdminFillPage>
   );
 }

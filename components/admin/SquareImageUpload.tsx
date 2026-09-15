@@ -39,7 +39,7 @@ export function SquareImageUpload({
   className,
   existingUrl,
 }: {
-  folder: "achievements" | "gallery" | "leadership";
+  folder: "achievements" | "gallery" | "leadership" | "events";
   name?: string;
   label?: string;
   required?: boolean;

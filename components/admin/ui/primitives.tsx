@@ -25,7 +25,10 @@ export function PageHeader({
   );
 }
 
-/** Full-height column for list pages: chrome stays put, list region fills remaining space. */
+/**
+ * List-page layout: normal page flow so KPIs keep full size and the shell scrolls.
+ * List chrome can dock with AdminStickyDock; table thead sticks inside the table wrap.
+ */
 export function AdminFillPage({
   children,
   className,
@@ -33,8 +36,24 @@ export function AdminFillPage({
   children: ReactNode;
   className?: string;
 }) {
+  return <div className={cn("space-y-4 md:space-y-6", className)}>{children}</div>;
+}
+
+/** Pins filters / search when they reach the top of the admin page scroller. */
+export function AdminStickyDock({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={cn("flex h-full min-h-0 flex-col", className)} data-admin-fill-page="">
+    <div
+      className={cn(
+        "sticky top-0 z-20 -mx-1 space-y-3 bg-[var(--admin-surface)] px-1 py-2 md:space-y-4",
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -90,32 +109,21 @@ export function AdminButton({
 export function AdminTableWrap({
   children,
   className,
-  fill,
 }: {
   children: ReactNode;
   className?: string;
-  fill?: boolean;
 }) {
-  return (
-    <div
-      className={cn(
-        "admin-table-wrap",
-        fill && "h-full min-h-0 overflow-auto",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cn("admin-table-wrap", className)}>{children}</div>;
 }
 
-/** Mobile card stack + desktop table. Desktop layout unchanged at md+. */
+/** Mobile card stack + desktop table. Page scrolls; desktop table body scrolls under sticky thead. */
 export function AdminResponsiveList({
   cards,
   table,
   className,
   tableWrapClassName,
-  fill,
+  /** @deprecated Kept for call-site compatibility; fill freeze is no longer used. */
+  fill: _fill,
 }: {
   cards: ReactNode;
   table: ReactNode;
@@ -123,15 +131,12 @@ export function AdminResponsiveList({
   tableWrapClassName?: string;
   fill?: boolean;
 }) {
+  void _fill;
   return (
-    <div className={cn(fill && "flex h-full min-h-0 flex-col", className)}>
-      <div className={cn("space-y-3 md:hidden", fill && "min-h-0 flex-1 overflow-y-auto")}>
-        {cards}
-      </div>
-      <div className={cn("hidden md:block", fill && "min-h-0 flex-1")}>
-        <AdminTableWrap fill={fill} className={tableWrapClassName}>
-          {table}
-        </AdminTableWrap>
+    <div className={className}>
+      <div className="space-y-3 md:hidden">{cards}</div>
+      <div className="hidden md:block">
+        <AdminTableWrap className={tableWrapClassName}>{table}</AdminTableWrap>
       </div>
     </div>
   );

@@ -61,6 +61,7 @@ const navItems: NavItem[] = [
       { href: "/admin/cms/gallery", label: "Gallery" },
       { href: "/admin/cms/videos", label: "Videos" },
       { href: "/admin/cms/leadership", label: "Leadership" },
+      { href: "/admin/cms/events", label: "Events" },
     ],
   },
   {
