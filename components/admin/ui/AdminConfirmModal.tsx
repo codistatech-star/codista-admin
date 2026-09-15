@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { AdminModal } from "./AdminModal";
 import { AdminButton } from "./primitives";
@@ -30,7 +30,7 @@ export function AdminConfirmModal({
 }) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const isControlled = open !== undefined;
   const isOpen = isControlled ? open : uncontrolledOpen;
 
@@ -40,16 +40,17 @@ export function AdminConfirmModal({
     if (!next) setError(null);
   }
 
-  function handleConfirm() {
+  async function handleConfirm() {
     setError(null);
-    startTransition(async () => {
-      try {
-        await onConfirm();
-        setOpen(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Action failed");
-      }
-    });
+    setPending(true);
+    try {
+      await onConfirm();
+      setOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Action failed");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

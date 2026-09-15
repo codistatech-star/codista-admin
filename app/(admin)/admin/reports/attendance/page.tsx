@@ -4,17 +4,19 @@ import { AttendanceClassLogList } from "@/components/admin/AttendanceClassLogLis
 import { AttendanceMembersList } from "@/components/admin/AttendanceMembersList";
 import {
   AttendanceReportPager,
-  ATTENDANCE_REPORT_PAGE_SIZE,
-  parseAttendanceReportPage,
 } from "@/components/admin/AttendanceReportPager";
 import { AttendanceReportSearch } from "@/components/admin/AttendanceReportSearch";
 import {
   AttendanceReportTabs,
-  parseAttendanceReportTab,
 } from "@/components/admin/AttendanceReportTabs";
 import { ReportBatchFilter } from "@/components/admin/ReportBatchFilter";
 import { ReportMonthPicker } from "@/components/admin/ReportMonthPicker";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
+import {
+  ATTENDANCE_REPORT_PAGE_SIZE,
+  parseAttendanceReportPage,
+  parseAttendanceReportTab,
+} from "@/lib/attendance-report-params";
 import { prisma } from "@/lib/prisma";
 import { buildAttendanceReport } from "@/lib/report-attendance";
 import { parseReportMonth, reportMonthLabel } from "@/lib/report-month";

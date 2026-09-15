@@ -45,10 +45,10 @@ const navItems: NavItem[] = [
     label: "Report",
     icon: "report",
     children: [
+      { href: "/admin/reports/cashflow", label: "Cashflow" },
       { href: "/admin/reports/payments", label: "Payments" },
       { href: "/admin/reports/attendance", label: "Attendance" },
       { href: "/admin/reports/stock", label: "Stock" },
-      { href: "/admin/reports/cashflow", label: "Cashflow" },
     ],
   },
   {

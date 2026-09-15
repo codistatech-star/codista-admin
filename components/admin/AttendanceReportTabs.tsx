@@ -3,8 +3,7 @@
 import { Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-
-export type AttendanceReportTab = "members" | "class-log";
+import type { AttendanceReportTab } from "@/lib/attendance-report-params";
 
 const TABS: { id: AttendanceReportTab; label: string }[] = [
   { id: "members", label: "Members" },
@@ -65,8 +64,4 @@ export function AttendanceReportTabs({ active }: { active: AttendanceReportTab }
       <AttendanceReportTabsInner active={active} />
     </Suspense>
   );
-}
-
-export function parseAttendanceReportTab(raw?: string | null): AttendanceReportTab {
-  return raw === "class-log" ? "class-log" : "members";
 }
