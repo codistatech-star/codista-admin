@@ -1,12 +1,17 @@
-import Link from "next/link";
 import { subMonths } from "date-fns";
+import { PageHeader, AdminCard } from "@/components/admin/ui";
+import { AttendanceClassLogList } from "@/components/admin/AttendanceClassLogList";
+import { AttendanceMembersList } from "@/components/admin/AttendanceMembersList";
 import {
-  PageHeader,
-  AdminCard,
-  AdminEmptyRow,
-  AdminResponsiveList,
-  AdminListCard,
-} from "@/components/admin/ui";
+  AttendanceReportPager,
+  ATTENDANCE_REPORT_PAGE_SIZE,
+  parseAttendanceReportPage,
+} from "@/components/admin/AttendanceReportPager";
+import { AttendanceReportSearch } from "@/components/admin/AttendanceReportSearch";
+import {
+  AttendanceReportTabs,
+  parseAttendanceReportTab,
+} from "@/components/admin/AttendanceReportTabs";
 import { ReportBatchFilter } from "@/components/admin/ReportBatchFilter";
 import { ReportMonthPicker } from "@/components/admin/ReportMonthPicker";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
@@ -15,17 +20,10 @@ import { buildAttendanceReport } from "@/lib/report-attendance";
 import { parseReportMonth, reportMonthLabel } from "@/lib/report-month";
 import { formatDate } from "@/lib/utils";
 
-function trendLabel(trend: number | null) {
-  if (trend == null) return "—";
-  if (trend > 0) return `↑ ${trend}%`;
-  if (trend < 0) return `↓ ${Math.abs(trend)}%`;
-  return "→ 0%";
-}
-
 export default async function AttendanceReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; batch?: string }>;
+  searchParams: Promise<{ month?: string; batch?: string; tab?: string; q?: string; page?: string }>;
 }) {
   const user = await requireSession();
   const branchId = await getActiveBranchId(user);
@@ -42,6 +40,10 @@ export default async function AttendanceReportPage({
   const { month, start, end } = parseReportMonth(sp.month);
   const prevStart = subMonths(start, 1);
   const batchFilter = sp.batch?.trim() || null;
+  const tab = parseAttendanceReportTab(sp.tab);
+  const q = sp.q?.trim().toLowerCase() ?? "";
+  const page = parseAttendanceReportPage(sp.page);
+  const pageSize = ATTENDANCE_REPORT_PAGE_SIZE;
 
   const [batches, members, sessionsThisMonth, sessionsLastMonth] = await Promise.all([
     prisma.batch.findMany({
@@ -98,6 +100,41 @@ export default async function AttendanceReportPage({
     ...batches.map((b) => ({ value: b.id, label: b.name })),
   ];
 
+  const filteredMembers = q
+    ? report.members.filter((m) => {
+        const haystack = [m.name, m.code, ...m.batches].join(" ").toLowerCase();
+        return haystack.includes(q);
+      })
+    : report.members;
+
+  const sessionRows = report.sessions.map((s) => ({
+    id: s.id,
+    date: s.date.toISOString(),
+    batchName: s.batchName,
+    present: s.present,
+    marked: s.marked,
+    takenBy: s.takenBy,
+  }));
+
+  const filteredSessions = q
+    ? sessionRows.filter((s) => {
+        const haystack = [s.batchName, s.takenBy ?? "", formatDate(s.date)].join(" ").toLowerCase();
+        return haystack.includes(q);
+      })
+    : sessionRows;
+
+  const activeTotal = tab === "members" ? filteredMembers.length : filteredSessions.length;
+  const totalPages = Math.max(1, Math.ceil(activeTotal / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+  const pagedMembers = filteredMembers.slice(startIdx, startIdx + pageSize);
+  const pagedSessions = filteredSessions.slice(startIdx, startIdx + pageSize);
+
+  const description =
+    tab === "members"
+      ? "Sorted by lowest attendance first. Unmarked = absent."
+      : "Sessions taken this month";
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -142,180 +179,29 @@ export default async function AttendanceReportPage({
         </AdminCard>
       </div>
 
-      <AdminCard title="Members" description="Sorted by lowest attendance first. Unmarked = absent.">
-        <AdminResponsiveList
-          cards={
-            report.members.length ? (
-              report.members.map((m) => (
-                <AdminListCard key={m.memberId}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <Link
-                        href={`/admin/members/${m.memberId}`}
-                        className="font-medium text-gray-900 underline-offset-2 hover:underline"
-                      >
-                        {m.name}
-                      </Link>
-                      <p className="text-xs text-[var(--admin-muted)]">{m.code}</p>
-                      <p className="mt-1 text-xs text-[var(--admin-muted)]">
-                        {m.batches.join(", ") || "—"}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="font-semibold text-[var(--admin-navy)]">
-                        {m.pct != null ? `${m.pct}%` : "—"}
-                      </p>
-                      <p className="text-xs text-[var(--admin-muted)]">
-                        {m.present}/{m.sessionsHeld}
-                      </p>
-                    </div>
-                  </div>
-                  <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <dt className="text-xs text-[var(--admin-muted)]">Last month</dt>
-                      <dd>
-                        {m.lastPct != null
-                          ? `${m.lastPct}% (${m.lastPresent}/${m.lastSessionsHeld})`
-                          : "—"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-[var(--admin-muted)]">Trend</dt>
-                      <dd
-                        className={
-                          m.trend != null && m.trend > 0
-                            ? "text-emerald-600"
-                            : m.trend != null && m.trend < 0
-                              ? "text-[var(--admin-red)]"
-                              : undefined
-                        }
-                      >
-                        {trendLabel(m.trend)}
-                      </dd>
-                    </div>
-                  </dl>
-                </AdminListCard>
-              ))
-            ) : (
-              <AdminListCard>
-                <p className="text-center text-sm text-[var(--admin-muted)]">
-                  No members with batches for this filter.
-                </p>
-              </AdminListCard>
-            )
-          }
-          table={
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Member</th>
-                  <th>Batch</th>
-                  <th>Present</th>
-                  <th>%</th>
-                  <th>Last month</th>
-                  <th>Trend</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.members.map((m) => (
-                  <tr key={m.memberId}>
-                    <td>
-                      <Link
-                        href={`/admin/members/${m.memberId}`}
-                        className="font-medium text-gray-900 underline-offset-2 hover:underline"
-                      >
-                        {m.name}
-                      </Link>
-                      <span className="ml-1 text-xs text-[var(--admin-muted)]">({m.code})</span>
-                    </td>
-                    <td>{m.batches.join(", ") || "—"}</td>
-                    <td>
-                      {m.present}/{m.sessionsHeld}
-                    </td>
-                    <td>{m.pct != null ? `${m.pct}%` : "—"}</td>
-                    <td>
-                      {m.lastPct != null
-                        ? `${m.lastPct}% (${m.lastPresent}/${m.lastSessionsHeld})`
-                        : "—"}
-                    </td>
-                    <td
-                      className={
-                        m.trend != null && m.trend > 0
-                          ? "text-emerald-600"
-                          : m.trend != null && m.trend < 0
-                            ? "text-[var(--admin-red)]"
-                            : undefined
-                      }
-                    >
-                      {trendLabel(m.trend)}
-                    </td>
-                  </tr>
-                ))}
-                {!report.members.length ? (
-                  <AdminEmptyRow colSpan={6} message="No members with batches for this filter." />
-                ) : null}
-              </tbody>
-            </table>
-          }
-        />
-      </AdminCard>
+      <AdminCard>
+        <div className="mb-4 space-y-3">
+          <AttendanceReportTabs active={tab} />
+          <p className="text-sm text-[var(--admin-muted)]">{description}</p>
+          <AttendanceReportSearch
+            placeholder={
+              tab === "members"
+                ? "Search name / code / batch"
+                : "Search batch / taken by / date"
+            }
+            defaultValue={sp.q ?? ""}
+          />
+        </div>
 
-      <AdminCard title="Class log" description="Sessions taken this month">
-        <AdminResponsiveList
-          cards={
-            report.sessions.length ? (
-              report.sessions.map((s) => (
-                <AdminListCard key={s.id}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900">{s.batchName}</p>
-                      <p className="mt-0.5 text-xs text-[var(--admin-muted)]">{formatDate(s.date)}</p>
-                    </div>
-                    <p className="shrink-0 font-semibold text-[var(--admin-navy)]">
-                      {s.present}/{s.marked}
-                    </p>
-                  </div>
-                  <p className="mt-3 text-sm text-[var(--admin-muted)]">
-                    Taken by {s.takenBy ?? "—"}
-                  </p>
-                </AdminListCard>
-              ))
-            ) : (
-              <AdminListCard>
-                <p className="text-center text-sm text-[var(--admin-muted)]">
-                  No attendance sessions this month.
-                </p>
-              </AdminListCard>
-            )
-          }
-          table={
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Batch</th>
-                  <th>Present</th>
-                  <th>Taken by</th>
-                </tr>
-              </thead>
-              <tbody>
-                {report.sessions.map((s) => (
-                  <tr key={s.id}>
-                    <td>{formatDate(s.date)}</td>
-                    <td>{s.batchName}</td>
-                    <td>
-                      {s.present}/{s.marked}
-                    </td>
-                    <td>{s.takenBy ?? "—"}</td>
-                  </tr>
-                ))}
-                {!report.sessions.length ? (
-                  <AdminEmptyRow colSpan={4} message="No attendance sessions this month." />
-                ) : null}
-              </tbody>
-            </table>
-          }
-        />
+        {tab === "members" ? (
+          <AttendanceMembersList members={pagedMembers} />
+        ) : (
+          <AttendanceClassLogList sessions={pagedSessions} />
+        )}
+
+        <div className="mt-4">
+          <AttendanceReportPager page={safePage} pageSize={pageSize} total={activeTotal} />
+        </div>
       </AdminCard>
     </div>
   );

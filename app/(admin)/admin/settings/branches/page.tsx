@@ -4,7 +4,7 @@ import {
   PageHeader,
   SubmitButton,
   AdminEmptyRow,
-  AdminModal,
+  AdminFormModal,
   AdminResponsiveList,
   AdminListCard,
 } from "@/components/admin/ui";
@@ -24,23 +24,21 @@ export default async function BranchesPage() {
         title="Branches"
         description="Academy branch locations"
         actions={
-          <AdminModal title="Add branch" trigger="Add branch">
-            <form action={createBranch} className="space-y-3">
-              <label className="admin-label">
-                Branch name
-                <input className="admin-input mt-1" name="name" placeholder="Branch name" required />
-              </label>
-              <label className="admin-label">
-                Address
-                <input className="admin-input mt-1" name="address" placeholder="Address" />
-              </label>
-              <label className="admin-label">
-                Phone
-                <input className="admin-input mt-1" name="phone" placeholder="Phone" />
-              </label>
-              <SubmitButton className="w-full">Save branch</SubmitButton>
-            </form>
-          </AdminModal>
+          <AdminFormModal title="Add branch" trigger="Add branch" action={createBranch}>
+            <label className="admin-label">
+              Branch name
+              <input className="admin-input mt-1" name="name" placeholder="Branch name" required />
+            </label>
+            <label className="admin-label">
+              Address
+              <input className="admin-input mt-1" name="address" placeholder="Address" />
+            </label>
+            <label className="admin-label">
+              Phone
+              <input className="admin-input mt-1" name="phone" placeholder="Phone" />
+            </label>
+            <SubmitButton className="w-full">Save branch</SubmitButton>
+          </AdminFormModal>
         }
       />
 

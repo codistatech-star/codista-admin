@@ -3,7 +3,7 @@ import {
   PageHeader,
   SubmitButton,
   AdminEmptyRow,
-  AdminModal,
+  AdminFormModal,
   AdminResponsiveList,
   AdminListCard,
 } from "@/components/admin/ui";
@@ -23,23 +23,21 @@ export default async function ExtraClassesPage() {
         description="Add-on classes mapped to members"
         actions={
           isAdmin ? (
-            <AdminModal title="Add extra class" trigger="Add extra class">
-              <form action={upsertExtraClass} className="space-y-3">
-                <label className="admin-label">
-                  Name
-                  <input className="admin-input mt-1" name="name" placeholder="Extra class" required />
-                </label>
-                <label className="admin-label">
-                  Fee (₹)
-                  <input className="admin-input mt-1" name="fee" type="number" placeholder="Fee" required />
-                </label>
-                <label className="admin-label">
-                  Sort order
-                  <input className="admin-input mt-1" name="sortOrder" type="number" defaultValue={0} />
-                </label>
-                <SubmitButton className="w-full">Save</SubmitButton>
-              </form>
-            </AdminModal>
+            <AdminFormModal title="Add extra class" trigger="Add extra class" action={upsertExtraClass}>
+              <label className="admin-label">
+                Name
+                <input className="admin-input mt-1" name="name" placeholder="Extra class" required />
+              </label>
+              <label className="admin-label">
+                Fee (₹)
+                <input className="admin-input mt-1" name="fee" type="number" placeholder="Fee" required />
+              </label>
+              <label className="admin-label">
+                Sort order
+                <input className="admin-input mt-1" name="sortOrder" type="number" defaultValue={0} />
+              </label>
+              <SubmitButton className="w-full">Save</SubmitButton>
+            </AdminFormModal>
           ) : undefined
         }
       />

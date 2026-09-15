@@ -8,6 +8,7 @@ import {
 } from "@/components/admin/ui";
 import { CollectPaymentModal } from "@/components/admin/CollectPaymentModal";
 import { NewMemberForm } from "@/components/admin/NewMemberForm";
+import { PaymentHistoryYearSelect } from "@/components/admin/PaymentHistoryYearSelect";
 import { canAccessBranch, requireSession } from "@/lib/auth-helpers";
 import {
   getAcademySettings,
@@ -20,12 +21,17 @@ import { formatDate, formatINR } from "@/lib/utils";
 
 export default async function MemberDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ year?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
   const user = await requireSession();
   const settings = await getAcademySettings();
+  const currentYear = new Date().getFullYear();
+
   const member = await prisma.member.findUnique({
     where: { id },
     include: {
@@ -34,12 +40,23 @@ export default async function MemberDetailPage({
       beltGrade: true,
       batches: { include: { batch: true } },
       extraClasses: { include: { extraClass: true } },
-      payments: { orderBy: { paidAt: "desc" }, take: 20 },
     },
   });
   if (!member || !canAccessBranch(user, member.branchId)) notFound();
 
-  const [plans, extras, batches, belts, bloodGroups] = await Promise.all([
+  const joiningYear = member.joiningDate.getFullYear();
+  const yearStart = Math.min(joiningYear, currentYear);
+  const years: number[] = [];
+  for (let y = currentYear; y >= yearStart; y--) years.push(y);
+
+  const parsedYear = Number(sp.year);
+  const selectedYear =
+    Number.isFinite(parsedYear) && years.includes(parsedYear) ? parsedYear : currentYear;
+
+  const yearFrom = new Date(selectedYear, 0, 1);
+  const yearTo = new Date(selectedYear + 1, 0, 1);
+
+  const [plans, extras, batches, belts, bloodGroups, payments] = await Promise.all([
     prisma.classPlan.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.extraClass.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.batch.findMany({
@@ -48,6 +65,13 @@ export default async function MemberDetailPage({
     }),
     prisma.beltGrade.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
     prisma.bloodGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.payment.findMany({
+      where: {
+        memberId: member.id,
+        paidAt: { gte: yearFrom, lt: yearTo },
+      },
+      orderBy: { paidAt: "desc" },
+    }),
   ]);
 
   const status = membershipStatus(
@@ -107,12 +131,15 @@ export default async function MemberDetailPage({
         }}
       />
 
-      <AdminCard title="Payment history">
+      <AdminCard
+        title="Payment history"
+        actions={<PaymentHistoryYearSelect year={selectedYear} years={years} />}
+      >
         <AdminResponsiveList
           tableWrapClassName="border-0"
           cards={
-            member.payments.length ? (
-              member.payments.map((p) => (
+            payments.length ? (
+              payments.map((p) => (
                 <AdminListCard key={p.id} className="!shadow-none">
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -137,7 +164,9 @@ export default async function MemberDetailPage({
               ))
             ) : (
               <AdminListCard className="!shadow-none">
-                <p className="text-center text-sm text-[var(--admin-muted)]">No payments yet</p>
+                <p className="text-center text-sm text-[var(--admin-muted)]">
+                  No payments in {selectedYear}
+                </p>
               </AdminListCard>
             )
           }
@@ -153,7 +182,7 @@ export default async function MemberDetailPage({
                 </tr>
               </thead>
               <tbody>
-                {member.payments.map((p) => (
+                {payments.map((p) => (
                   <tr key={p.id}>
                     <td className="font-mono text-xs">{p.receiptNo}</td>
                     <td>{formatDate(p.paidAt)}</td>
@@ -162,8 +191,8 @@ export default async function MemberDetailPage({
                     <td>{formatDate(p.validUntil)}</td>
                   </tr>
                 ))}
-                {!member.payments.length ? (
-                  <AdminEmptyRow colSpan={5} message="No payments yet" />
+                {!payments.length ? (
+                  <AdminEmptyRow colSpan={5} message={`No payments in ${selectedYear}`} />
                 ) : null}
               </tbody>
             </table>

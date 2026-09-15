@@ -4,7 +4,7 @@ import {
   PageHeader,
   SubmitButton,
   AdminEmptyRow,
-  AdminModal,
+  AdminFormModal,
   AdminCheckbox,
   AdminResponsiveList,
   AdminListCard,
@@ -36,43 +36,35 @@ export default async function UsersPage() {
         title="Users"
         description="Add or revoke Branch Admins. Admin account is seeded and not managed here."
         actions={
-          <AdminModal title="Add Branch Admin" trigger="Add user">
-            <form
-              action={async (formData) => {
-                "use server";
-                await createBranchAdmin(formData);
-              }}
-              className="space-y-3"
-            >
-              <label className="admin-label">
-                Full name
-                <input className="admin-input mt-1" name="name" placeholder="Full name" required />
-              </label>
-              <label className="admin-label">
-                Email
-                <input className="admin-input mt-1" name="email" type="email" placeholder="Email" required />
-              </label>
-              <label className="admin-label">
-                Temporary password
-                <input
-                  className="admin-input mt-1"
-                  name="password"
-                  type="password"
-                  placeholder="Temporary password"
-                  required
-                />
-              </label>
-              <div>
-                <p className="mb-2 text-sm font-medium text-gray-700">Branches</p>
-                <div className="flex flex-wrap gap-3">
-                  {branches.map((b) => (
-                    <AdminCheckbox key={b.id} name="branchIds" value={b.id} label={b.name} />
-                  ))}
-                </div>
+          <AdminFormModal title="Add Branch Admin" trigger="Add user" action={createBranchAdmin}>
+            <label className="admin-label">
+              Full name
+              <input className="admin-input mt-1" name="name" placeholder="Full name" required />
+            </label>
+            <label className="admin-label">
+              Email
+              <input className="admin-input mt-1" name="email" type="email" placeholder="Email" required />
+            </label>
+            <label className="admin-label">
+              Temporary password
+              <input
+                className="admin-input mt-1"
+                name="password"
+                type="password"
+                placeholder="Temporary password"
+                required
+              />
+            </label>
+            <div>
+              <p className="mb-2 text-sm font-medium text-gray-700">Branches</p>
+              <div className="flex flex-wrap gap-3">
+                {branches.map((b) => (
+                  <AdminCheckbox key={b.id} name="branchIds" value={b.id} label={b.name} />
+                ))}
               </div>
-              <SubmitButton className="w-full">Add Branch Admin</SubmitButton>
-            </form>
-          </AdminModal>
+            </div>
+            <SubmitButton className="w-full">Add Branch Admin</SubmitButton>
+          </AdminFormModal>
         }
       />
 

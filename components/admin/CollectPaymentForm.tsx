@@ -26,6 +26,8 @@ export function CollectPaymentForm({
   const [quote, setQuote] = useState<PaymentQuoteDTO | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [loadingQuote, setLoadingQuote] = useState(false);
+  const [discountInput, setDiscountInput] = useState("0");
+  const [appliedDiscount, setAppliedDiscount] = useState(0);
   const [pending, startTransition] = useTransition();
   const paidAtDefault = new Date().toISOString().slice(0, 16);
 
@@ -59,6 +61,13 @@ export function CollectPaymentForm({
       cancelled = true;
     };
   }, [memberId]);
+
+  function applyDiscountFromInput() {
+    const n = Number(discountInput);
+    setAppliedDiscount(Number.isFinite(n) && n > 0 ? n : 0);
+  }
+
+  const amountDue = quote ? Math.max(0, quote.subtotal - appliedDiscount) : 0;
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
@@ -103,7 +112,15 @@ export function CollectPaymentForm({
 
         <label className="admin-label">
           Discount (₹)
-          <input className="admin-input mt-1" name="discount" type="number" defaultValue={0} />
+          <input
+            className="admin-input mt-1"
+            name="discount"
+            type="number"
+            min={0}
+            value={discountInput}
+            onChange={(e) => setDiscountInput(e.target.value)}
+            onBlur={applyDiscountFromInput}
+          />
         </label>
         <label className="admin-label">
           Mode
@@ -159,9 +176,17 @@ export function CollectPaymentForm({
               <p>
                 Late fine: <strong>{formatINR(quote.lateFine)}</strong>
               </p>
+              <p className="mt-2">
+                Subtotal: <strong>{formatINR(quote.subtotal)}</strong>
+              </p>
+              {appliedDiscount > 0 ? (
+                <p>
+                  Discount: <strong className="text-[var(--admin-red)]">−{formatINR(appliedDiscount)}</strong>
+                </p>
+              ) : null}
               <p className="mt-2 text-base">
-                Subtotal:{" "}
-                <strong className="text-[var(--admin-red)]">{formatINR(quote.subtotal)}</strong>
+                Amount due:{" "}
+                <strong className="text-[var(--admin-red)]">{formatINR(amountDue)}</strong>
               </p>
               <p className="text-[var(--admin-muted)]">
                 New valid until: {formatDate(quote.validUntil)} ({quote.monthsCovered} month

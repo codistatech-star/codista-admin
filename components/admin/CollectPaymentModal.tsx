@@ -1,6 +1,7 @@
 "use client";
 
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { AdminModal } from "@/components/admin/ui";
 import {
   CollectPaymentForm,
@@ -12,7 +13,7 @@ export function CollectPaymentModal({
   triggerClassName,
   members,
   memberId,
-  open,
+  open: controlledOpen,
   onOpenChange,
   onSuccess,
   redirectAfter,
@@ -28,21 +29,37 @@ export function CollectPaymentModal({
   redirectAfter?: boolean;
   className?: string;
 }) {
+  const router = useRouter();
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : uncontrolledOpen;
+
+  function setOpen(next: boolean) {
+    if (!isControlled) setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  }
+
   return (
     <AdminModal
       title="Collect payment"
       trigger={trigger}
       triggerClassName={triggerClassName}
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={setOpen}
       className={className ?? "!max-w-lg"}
     >
       <CollectPaymentForm
         key={memberId ?? "pick"}
         members={members}
         memberId={memberId}
-        onSuccess={onSuccess}
-        redirectAfter={redirectAfter}
+        onSuccess={(result) => {
+          setOpen(false);
+          onSuccess?.(result);
+          if (redirectAfter !== false && !onSuccess) {
+            router.refresh();
+          }
+        }}
+        redirectAfter={false}
       />
     </AdminModal>
   );

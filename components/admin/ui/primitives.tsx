@@ -28,18 +28,23 @@ export function AdminCard({
   className,
   title,
   description,
+  actions,
 }: {
   children: ReactNode;
   className?: string;
   title?: string;
   description?: string;
+  actions?: ReactNode;
 }) {
   return (
     <section className={cn("admin-card", className)}>
       {title ? (
-        <div className="mb-4">
-          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-          {description ? <p className="mt-1 text-sm text-[var(--admin-muted)]">{description}</p> : null}
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+            {description ? <p className="mt-1 text-sm text-[var(--admin-muted)]">{description}</p> : null}
+          </div>
+          {actions ? <div className="shrink-0">{actions}</div> : null}
         </div>
       ) : null}
       {children}

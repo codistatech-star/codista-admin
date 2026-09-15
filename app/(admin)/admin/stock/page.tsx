@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { startOfMonth } from "date-fns";
+import { addMonths, format, startOfMonth } from "date-fns";
 import {
   PageHeader,
   AdminCard,
@@ -16,6 +16,7 @@ import { StockVariantsModal } from "@/components/admin/StockVariantsModal";
 import type { StockItemDTO } from "@/components/admin/stock-types";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
+import { getStockSalesReport } from "@/lib/report-stock";
 import { formatINR } from "@/lib/utils";
 
 function toItemDTO(item: {
@@ -61,8 +62,11 @@ export default async function StockPage({
   const q = (sp.q ?? "").trim();
   const lowOnly = sp.stock === "low";
   const monthStart = startOfMonth(new Date());
+  const monthEnd = addMonths(monthStart, 1);
+  const monthKey = format(monthStart, "yyyy-MM");
+  const stockReportHref = `/admin/reports/stock?month=${monthKey}`;
 
-  const [allItems, members, salesCash] = await Promise.all([
+  const [allItems, members, monthSales] = await Promise.all([
     prisma.stockItem.findMany({
       where: { isActive: true },
       include: { variants: { orderBy: { label: "asc" } } },
@@ -77,15 +81,8 @@ export default async function StockPage({
         })
       : Promise.resolve([]),
     branchId
-      ? prisma.cashEntry.aggregate({
-          where: {
-            branchId,
-            source: "STOCK_SALE",
-            entryDate: { gte: monthStart },
-          },
-          _sum: { amount: true },
-        })
-      : Promise.resolve({ _sum: { amount: null } }),
+      ? getStockSalesReport({ branchId, start: monthStart, end: monthEnd })
+      : Promise.resolve({ unitsSold: 0, revenue: 0, cost: 0, profit: 0, lines: [] }),
   ]);
 
   const unitsOnHand = allItems.reduce(
@@ -131,8 +128,15 @@ export default async function StockPage({
     },
     {
       label: "Stock sales this month",
-      value: formatINR(Number(salesCash._sum.amount ?? 0)),
-      href: "/admin/cashflow",
+      value: formatINR(monthSales.revenue),
+      href: stockReportHref,
+    },
+    {
+      label: "Stock profit this month",
+      value: formatINR(monthSales.profit),
+      href: stockReportHref,
+      valueClassName:
+        monthSales.profit >= 0 ? "text-emerald-600" : "text-[var(--admin-red)]",
     },
   ];
 
@@ -154,7 +158,7 @@ export default async function StockPage({
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {cards.map((c) => (
           <Link
             key={c.label}
@@ -164,7 +168,15 @@ export default async function StockPage({
             <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
               {c.label}
             </p>
-            <p className="mt-3 text-3xl font-semibold text-[var(--admin-navy)]">{c.value}</p>
+            <p
+              className={`mt-3 text-3xl font-semibold ${
+                "valueClassName" in c && c.valueClassName
+                  ? c.valueClassName
+                  : "text-[var(--admin-navy)]"
+              }`}
+            >
+              {c.value}
+            </p>
           </Link>
         ))}
       </div>

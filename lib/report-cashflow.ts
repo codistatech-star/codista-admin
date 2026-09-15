@@ -128,7 +128,7 @@ export function buildCashflowReport(input: {
         .reduce((n, e) => n + e.amount, 0);
       let href: string | undefined;
       if (source === "MEMBERSHIP") href = `/admin/reports/payments?month=${input.month}`;
-      if (source === "STOCK_SALE") href = `/admin/reports/stock`;
+      if (source === "STOCK_SALE") href = `/admin/reports/stock?month=${input.month}`;
       return { source, label: sourceLabel(source), amount, href };
     })
     .filter((r) => r.amount > 0);

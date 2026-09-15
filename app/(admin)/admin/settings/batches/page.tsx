@@ -2,7 +2,7 @@ import {
   PageHeader,
   SubmitButton,
   AdminEmptyRow,
-  AdminModal,
+  AdminFormModal,
   AdminResponsiveList,
   AdminListCard,
 } from "@/components/admin/ui";
@@ -22,16 +22,14 @@ export default async function BatchesPage() {
         title="Batches"
         description="Training batches for attendance rosters"
         actions={
-          <AdminModal title="Add batch" trigger="Add batch">
-            <form action={upsertBatch} className="space-y-3">
-              <label className="admin-label">
-                Batch name
-                <input className="admin-input mt-1" name="name" placeholder="Batch name" required />
-              </label>
-              <p className="text-xs text-[var(--admin-muted)]">Saved to the current active branch.</p>
-              <SubmitButton className="w-full">Save batch</SubmitButton>
-            </form>
-          </AdminModal>
+          <AdminFormModal title="Add batch" trigger="Add batch" action={upsertBatch}>
+            <label className="admin-label">
+              Batch name
+              <input className="admin-input mt-1" name="name" placeholder="Batch name" required />
+            </label>
+            <p className="text-xs text-[var(--admin-muted)]">Saved to the current active branch.</p>
+            <SubmitButton className="w-full">Save batch</SubmitButton>
+          </AdminFormModal>
         }
       />
 

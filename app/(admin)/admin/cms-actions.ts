@@ -268,6 +268,7 @@ async function recordStockMovementsInternal({
   revalidatePath("/admin/cashflow");
   revalidatePath("/admin/reports/cashflow");
   revalidatePath("/admin/reports/stock");
+  revalidatePath("/admin/reports/payments");
   revalidatePath("/admin/dashboard");
 }
 

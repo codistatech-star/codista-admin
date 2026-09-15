@@ -93,6 +93,16 @@ function itemIsActive(item: NavItem, pathname: string, isAdmin: boolean) {
   return visibleChildren(item, isAdmin).some((child) => pathMatches(child.href, pathname));
 }
 
+/** Keep at most one group open (accordion). Pass null to close all. */
+function accordionOpenMap(prev: Record<string, boolean>, openId: string | null) {
+  const next: Record<string, boolean> = {};
+  for (const key of Object.keys(prev)) {
+    next[key] = key === openId;
+  }
+  if (openId && !(openId in next)) next[openId] = true;
+  return next;
+}
+
 function NavIcon({ name }: { name: NavIconName }) {
   const className = "h-5 w-5 shrink-0";
   switch (name) {
@@ -189,20 +199,22 @@ export function AdminSidebar({
       const raw = localStorage.getItem(OPEN_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Record<string, boolean>;
-        setOpenMap((prev) => ({ ...prev, ...parsed, ...(activeId ? { [activeId]: true } : {}) }));
+        const storedOpenId = Object.keys(parsed).find((key) => parsed[key]) ?? null;
+        const openId = activeId ?? storedOpenId;
+        setOpenMap((prev) => accordionOpenMap(prev, openId));
         return;
       }
     } catch {
       /* ignore */
     }
-    if (activeId) setOpenMap((prev) => ({ ...prev, [activeId]: true }));
+    if (activeId) setOpenMap((prev) => accordionOpenMap(prev, activeId));
   }, [activeId]);
 
   useEffect(() => {
     if (!activeId) return;
     setOpenMap((prev) => {
-      if (prev[activeId]) return prev;
-      const next = { ...prev, [activeId]: true };
+      if (prev[activeId] && Object.values(prev).filter(Boolean).length === 1) return prev;
+      const next = accordionOpenMap(prev, activeId);
       try {
         localStorage.setItem(OPEN_KEY, JSON.stringify(next));
       } catch {
@@ -242,14 +254,14 @@ export function AdminSidebar({
       setCollapsed(false);
       persistCollapsed(false);
       setOpenMap((prev) => {
-        const next = { ...prev, [id]: true };
+        const next = accordionOpenMap(prev, id);
         persistOpen(next);
         return next;
       });
       return;
     }
     setOpenMap((prev) => {
-      const next = { ...prev, [id]: !prev[id] };
+      const next = accordionOpenMap(prev, prev[id] ? null : id);
       persistOpen(next);
       return next;
     });

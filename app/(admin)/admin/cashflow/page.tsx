@@ -2,18 +2,14 @@ import { startOfDay } from "date-fns";
 import {
   PageHeader,
   AdminCard,
-  SubmitButton,
-  AdminSelect,
-  AdminDatePicker,
   AdminEmptyRow,
-  AdminModal,
   AdminResponsiveList,
   AdminListCard,
 } from "@/components/admin/ui";
+import { AddCashEntryModal } from "@/components/admin/AddCashEntryModal";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatINR } from "@/lib/utils";
-import { addCashEntry } from "../cms-actions";
 
 export default async function CashflowPage() {
   const user = await requireSession();
@@ -62,44 +58,7 @@ export default async function CashflowPage() {
         title="Cashflow"
         description="Today's income and expenses"
         actions={
-          <AdminModal title="Add cash entry" trigger="Add entry">
-            <form action={addCashEntry} className="space-y-3">
-              <label className="admin-label">
-                Type
-                <AdminSelect
-                  className="mt-1"
-                  name="type"
-                  required
-                  defaultValue="EXPENSE"
-                  options={[
-                    { value: "EXPENSE", label: "Expense" },
-                    { value: "INCOME", label: "Income" },
-                  ]}
-                />
-              </label>
-              <label className="admin-label">
-                Account
-                <AdminSelect className="mt-1" name="accountId" required options={accountOptions} />
-              </label>
-              <label className="admin-label">
-                Amount
-                <input className="admin-input mt-1" name="amount" type="number" placeholder="Amount" required />
-              </label>
-              <label className="admin-label">
-                Category
-                <input className="admin-input mt-1" name="category" placeholder="Category (rent, salary…)" />
-              </label>
-              <label className="admin-label">
-                Description
-                <input className="admin-input mt-1" name="description" placeholder="Description" />
-              </label>
-              <label className="admin-label">
-                Date
-                <AdminDatePicker className="mt-1" name="entryDate" defaultValue={todayStr} />
-              </label>
-              <SubmitButton className="w-full">Save entry</SubmitButton>
-            </form>
-          </AdminModal>
+          <AddCashEntryModal accountOptions={accountOptions} defaultDate={todayStr} />
         }
       />
 

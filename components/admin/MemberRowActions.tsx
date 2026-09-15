@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CollectPaymentModal } from "@/components/admin/CollectPaymentModal";
+import { AdminConfirmModal } from "@/components/admin/ui";
 import { setMemberActive } from "@/app/(admin)/admin/actions";
 
 function CollectIcon() {
@@ -42,6 +43,7 @@ export function MemberRowActions({
 }) {
   const router = useRouter();
   const [collectOpen, setCollectOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const activateLabel = isActive ? "Deactivate" : "Activate";
 
   return (
@@ -65,18 +67,34 @@ export function MemberRowActions({
           router.refresh();
         }}
       />
-      <form action={setMemberActive}>
-        <input type="hidden" name="id" value={memberId} />
-        <input type="hidden" name="isActive" value={isActive ? "false" : "true"} />
-        <button
-          type="submit"
-          className={`admin-icon-btn ${isActive ? "is-danger" : ""}`}
-          title={activateLabel}
-          aria-label={activateLabel}
-        >
-          <PowerIcon />
-        </button>
-      </form>
+      <button
+        type="button"
+        className={`admin-icon-btn ${isActive ? "is-danger" : ""}`}
+        title={activateLabel}
+        aria-label={activateLabel}
+        onClick={() => setConfirmOpen(true)}
+      >
+        <PowerIcon />
+      </button>
+      <AdminConfirmModal
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title={activateLabel}
+        message={
+          isActive
+            ? "Deactivate this member? They will be marked inactive."
+            : "Activate this member? They will be marked active again."
+        }
+        confirmLabel={activateLabel}
+        danger={isActive}
+        onConfirm={async () => {
+          const fd = new FormData();
+          fd.set("id", memberId);
+          fd.set("isActive", isActive ? "false" : "true");
+          await setMemberActive(fd);
+          router.refresh();
+        }}
+      />
     </div>
   );
 }

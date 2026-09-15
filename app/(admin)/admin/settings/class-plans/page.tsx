@@ -3,7 +3,7 @@ import {
   PageHeader,
   SubmitButton,
   AdminEmptyRow,
-  AdminModal,
+  AdminFormModal,
   AdminResponsiveList,
   AdminListCard,
 } from "@/components/admin/ui";
@@ -23,23 +23,21 @@ export default async function ClassPlansPage() {
         description="Membership plan fees (Daily, 4 days, etc.)"
         actions={
           isAdmin ? (
-            <AdminModal title="Add class plan" trigger="Add plan">
-              <form action={upsertClassPlan} className="space-y-3">
-                <label className="admin-label">
-                  Plan name
-                  <input className="admin-input mt-1" name="name" placeholder="Plan name" required />
-                </label>
-                <label className="admin-label">
-                  Fee (₹)
-                  <input className="admin-input mt-1" name="fee" type="number" placeholder="Fee" required />
-                </label>
-                <label className="admin-label">
-                  Sort order
-                  <input className="admin-input mt-1" name="sortOrder" type="number" defaultValue={0} />
-                </label>
-                <SubmitButton className="w-full">Save plan</SubmitButton>
-              </form>
-            </AdminModal>
+            <AdminFormModal title="Add class plan" trigger="Add plan" action={upsertClassPlan}>
+              <label className="admin-label">
+                Plan name
+                <input className="admin-input mt-1" name="name" placeholder="Plan name" required />
+              </label>
+              <label className="admin-label">
+                Fee (₹)
+                <input className="admin-input mt-1" name="fee" type="number" placeholder="Fee" required />
+              </label>
+              <label className="admin-label">
+                Sort order
+                <input className="admin-input mt-1" name="sortOrder" type="number" defaultValue={0} />
+              </label>
+              <SubmitButton className="w-full">Save plan</SubmitButton>
+            </AdminFormModal>
           ) : undefined
         }
       />

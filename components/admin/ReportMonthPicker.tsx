@@ -17,6 +17,8 @@ function ReportMonthPickerInner({ month }: { month: string }) {
       onChange={(next) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("month", next);
+        params.delete("page");
+        params.delete("q");
         router.push(`${pathname}?${params.toString()}`);
       }}
     />

@@ -421,7 +421,8 @@
   top: calc(100% + 0.35rem);
   left: 0;
   right: auto;
-  width: min(17.5rem, 100%);
+  width: 17.5rem;
+  min-width: 17.5rem;
   max-width: calc(100vw - 2rem);
   box-sizing: border-box;
   border-radius: 0.75rem;
@@ -440,9 +441,10 @@
   .admin-app .admin-datepicker-popover,
   .admin-app .admin-datepicker-popover.is-align-end {
     left: 0;
-    right: 0;
-    width: auto;
-    max-width: none;
+    right: auto;
+    width: min(17.5rem, calc(100vw - 2rem));
+    min-width: min(17.5rem, calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
   }
 }
 

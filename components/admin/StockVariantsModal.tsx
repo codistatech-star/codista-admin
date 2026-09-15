@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { AdminModal, ConfirmDeleteButton, SubmitButton } from "@/components/admin/ui";
 import { addStockVariant, deleteStockVariant } from "@/app/(admin)/admin/cms-actions";
 import type { StockItemDTO } from "@/components/admin/stock-types";
@@ -28,6 +29,7 @@ export function StockVariantsModal({
   trigger?: ReactNode;
   triggerClassName?: string;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -38,6 +40,7 @@ export function StockVariantsModal({
     try {
       await addStockVariant(formData);
       formRef.current?.reset();
+      router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add variant");
     }
@@ -142,7 +145,12 @@ export function StockVariantsModal({
                       {usesDefault ? " (item default)" : ""}
                     </p>
                   </div>
-                  <form action={deleteStockVariant}>
+                  <form
+                    action={async (fd) => {
+                      await deleteStockVariant(fd);
+                      router.refresh();
+                    }}
+                  >
                     <input type="hidden" name="id" value={v.id} />
                     <ConfirmDeleteButton
                       label="Remove"

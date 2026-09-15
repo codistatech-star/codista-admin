@@ -3,7 +3,7 @@ import {
   PageHeader,
   SubmitButton,
   AdminEmptyRow,
-  AdminModal,
+  AdminFormModal,
   AdminResponsiveList,
   AdminListCard,
 } from "@/components/admin/ui";
@@ -23,19 +23,17 @@ export default async function BeltsPage() {
         description="Taekwondo belt / kup grades"
         actions={
           isAdmin ? (
-            <AdminModal title="Add belt grade" trigger="Add belt">
-              <form action={upsertBelt} className="space-y-3">
-                <label className="admin-label">
-                  Belt name
-                  <input className="admin-input mt-1" name="name" placeholder="Belt name" required />
-                </label>
-                <label className="admin-label">
-                  Sort order
-                  <input className="admin-input mt-1" name="sortOrder" type="number" defaultValue={0} />
-                </label>
-                <SubmitButton className="w-full">Save belt</SubmitButton>
-              </form>
-            </AdminModal>
+            <AdminFormModal title="Add belt grade" trigger="Add belt" action={upsertBelt}>
+              <label className="admin-label">
+                Belt name
+                <input className="admin-input mt-1" name="name" placeholder="Belt name" required />
+              </label>
+              <label className="admin-label">
+                Sort order
+                <input className="admin-input mt-1" name="sortOrder" type="number" defaultValue={0} />
+              </label>
+              <SubmitButton className="w-full">Save belt</SubmitButton>
+            </AdminFormModal>
           ) : undefined
         }
       />
