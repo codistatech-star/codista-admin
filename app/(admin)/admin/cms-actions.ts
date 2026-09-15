@@ -200,12 +200,12 @@ async function recordStockMovementsInternal({
         : 0;
 
   await prisma.$transaction(async (tx) => {
-    const cashAccount =
-      type === "SALE"
-        ? await tx.cashAccount.findFirst({
-            where: { branchId, name: "Cash", isActive: true },
-          })
-        : null;
+    const needsCash = type === "SALE" || type === "PURCHASE";
+    const cashAccount = needsCash
+      ? await tx.cashAccount.findFirst({
+          where: { branchId, name: "Cash", isActive: true },
+        })
+      : null;
 
     for (const line of lines) {
       const item = itemById.get(line.itemId)!;
@@ -244,11 +244,30 @@ async function recordStockMovementsInternal({
           },
         });
       }
+
+      if (type === "PURCHASE" && line.unitPrice && line.unitPrice > 0 && cashAccount) {
+        await tx.cashEntry.create({
+          data: {
+            accountId: cashAccount.id,
+            branchId,
+            type: "EXPENSE",
+            source: "STOCK_PURCHASE",
+            amount: line.unitPrice * line.quantity,
+            category: "Stock purchase",
+            description: notes ?? `Stock purchase — ${item.name}`,
+            entryDate: new Date(),
+            stockMovementId: movement.id,
+            createdById: user.id,
+          },
+        });
+      }
     }
   });
 
   revalidatePath("/admin/stock");
   revalidatePath("/admin/cashflow");
+  revalidatePath("/admin/reports/cashflow");
+  revalidatePath("/admin/reports/stock");
   revalidatePath("/admin/dashboard");
 }
 
@@ -272,6 +291,7 @@ export async function addCashEntry(formData: FormData) {
     },
   });
   revalidatePath("/admin/cashflow");
+  revalidatePath("/admin/reports/cashflow");
   revalidatePath("/admin/dashboard");
 }
 

@@ -372,6 +372,7 @@ export async function collectPayment(formData: FormData) {
   });
 
   revalidatePath("/admin/reports/payments");
+  revalidatePath("/admin/reports/cashflow");
   revalidatePath("/admin/members");
   revalidatePath("/admin/cashflow");
   revalidatePath("/admin/dashboard");
@@ -417,4 +418,5 @@ export async function markAttendance(formData: FormData) {
   });
 
   revalidatePath("/admin/attendance");
+  revalidatePath("/admin/reports/attendance");
 }

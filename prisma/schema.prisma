@@ -42,6 +42,7 @@ enum CashEntryType {
 enum CashEntrySource {
   MEMBERSHIP
   STOCK_SALE
+  STOCK_PURCHASE
   EVENT
   MANUAL
   OTHER
