@@ -1,7 +1,5 @@
 "use client";
 
-import { Suspense } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import type { AttendanceReportTab } from "@/lib/attendance-report-params";
 
@@ -10,21 +8,13 @@ const TABS: { id: AttendanceReportTab; label: string }[] = [
   { id: "class-log", label: "Class log" },
 ];
 
-function AttendanceReportTabsInner({ active }: { active: AttendanceReportTab }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-
-  function selectTab(tab: AttendanceReportTab) {
-    const params = new URLSearchParams(searchParams.toString());
-    if (tab === "members") params.delete("tab");
-    else params.set("tab", tab);
-    params.delete("page");
-    params.delete("q");
-    const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
-  }
-
+export function AttendanceReportTabs({
+  active,
+  onSelect,
+}: {
+  active: AttendanceReportTab;
+  onSelect: (tab: AttendanceReportTab) => void;
+}) {
   return (
     <div className="flex gap-1 border-b border-[var(--admin-border)]" role="tablist" aria-label="Attendance report views">
       {TABS.map((tab) => {
@@ -35,7 +25,7 @@ function AttendanceReportTabsInner({ active }: { active: AttendanceReportTab }) 
             type="button"
             role="tab"
             aria-selected={isActive}
-            onClick={() => selectTab(tab.id)}
+            onClick={() => onSelect(tab.id)}
             className={cn(
               "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition",
               isActive
@@ -48,20 +38,5 @@ function AttendanceReportTabsInner({ active }: { active: AttendanceReportTab }) 
         );
       })}
     </div>
-  );
-}
-
-export function AttendanceReportTabs({ active }: { active: AttendanceReportTab }) {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex gap-1 border-b border-[var(--admin-border)]">
-          <div className="h-9 w-20 animate-pulse rounded bg-gray-100" />
-          <div className="h-9 w-24 animate-pulse rounded bg-gray-100" />
-        </div>
-      }
-    >
-      <AttendanceReportTabsInner active={active} />
-    </Suspense>
   );
 }

@@ -38,6 +38,9 @@ export function buildStockSalesReport(
     createdAt: Date;
     quantity: number;
     unitPrice: Decimalish;
+    unitCost: Decimalish;
+    itemName: string | null;
+    variantLabel: string | null;
     item: {
       name: string;
       salePrice: Decimalish;
@@ -53,16 +56,17 @@ export function buildStockSalesReport(
 ): StockSalesReport {
   const lines: StockSaleLine[] = movements.map((m) => {
     const catalogueSale = toNum(m.variant?.salePrice ?? m.item.salePrice);
-    const unitCost = toNum(m.variant?.costPrice ?? m.item.costPrice);
+    const catalogueCost = toNum(m.variant?.costPrice ?? m.item.costPrice);
     const unitSale = m.unitPrice != null ? toNum(m.unitPrice) : catalogueSale;
+    const unitCost = m.unitCost != null ? toNum(m.unitCost) : catalogueCost;
     const qty = m.quantity;
     const revenue = unitSale * qty;
     const cost = unitCost * qty;
     return {
       id: m.id,
       createdAt: m.createdAt,
-      itemName: m.item.name,
-      variantLabel: m.variant?.label ?? null,
+      itemName: m.itemName ?? m.item.name,
+      variantLabel: m.variantLabel ?? m.variant?.label ?? null,
       memberName: m.member?.name ?? null,
       memberCode: m.member?.code ?? null,
       quantity: qty,
@@ -95,7 +99,14 @@ export async function getStockSalesReport(input: {
       type: "SALE",
       createdAt: { gte: input.start, lt: input.end },
     },
-    include: {
+    select: {
+      id: true,
+      createdAt: true,
+      quantity: true,
+      unitPrice: true,
+      unitCost: true,
+      itemName: true,
+      variantLabel: true,
       item: { select: { name: true, salePrice: true, costPrice: true } },
       variant: { select: { label: true, salePrice: true, costPrice: true } },
       member: { select: { name: true, code: true } },

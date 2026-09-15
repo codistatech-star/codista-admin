@@ -3,6 +3,7 @@ import { addMonths, format, startOfMonth } from "date-fns";
 import {
   PageHeader,
   AdminCard,
+  AdminFillPage,
   SubmitButton,
   AdminEmptyRow,
   AdminSelect,
@@ -141,71 +142,76 @@ export default async function StockPage({
   ];
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Stock"
-        description="Catalogue, sizes, purchases and sales"
-        actions={
-          <>
-            <AddStockItemModal />
-            <RecordStockMovementModal
-              items={stockableItems}
-              members={members}
-              disabled={!canRecord}
-              triggerClassName="btn-secondary hover:!border-[var(--admin-red)] hover:!bg-[var(--admin-red)] hover:!text-white"
-            />
-          </>
-        }
-      />
+    <AdminFillPage>
+      <div className="shrink-0 space-y-3 pb-4 md:space-y-4">
+        <PageHeader
+          className="!mb-0"
+          title="Stock"
+          description="Catalogue, sizes, purchases and sales"
+          actions={
+            <>
+              <AddStockItemModal />
+              <RecordStockMovementModal
+                items={stockableItems}
+                members={members}
+                disabled={!canRecord}
+                triggerClassName="btn-secondary hover:!border-[var(--admin-red)] hover:!bg-[var(--admin-red)] hover:!text-white"
+              />
+            </>
+          }
+        />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        {cards.map((c) => (
-          <Link
-            key={c.label}
-            href={c.href}
-            className="admin-card transition hover:border-[var(--admin-navy)]"
-          >
-            <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
-              {c.label}
-            </p>
-            <p
-              className={`mt-3 text-3xl font-semibold ${
-                "valueClassName" in c && c.valueClassName
-                  ? c.valueClassName
-                  : "text-[var(--admin-navy)]"
-              }`}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5 md:gap-4">
+          {cards.map((c) => (
+            <Link
+              key={c.label}
+              href={c.href}
+              className="admin-card p-3 transition hover:border-[var(--admin-navy)] md:p-5"
             >
-              {c.value}
-            </p>
-          </Link>
-        ))}
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--admin-muted)] md:text-xs">
+                {c.label}
+              </p>
+              <p
+                className={`mt-2 text-xl font-semibold md:mt-3 md:text-3xl ${
+                  "valueClassName" in c && c.valueClassName
+                    ? c.valueClassName
+                    : "text-[var(--admin-navy)]"
+                }`}
+              >
+                {c.value}
+              </p>
+            </Link>
+          ))}
+        </div>
+
+        <AdminCard>
+          <form className="flex flex-wrap gap-3">
+            <input
+              className="admin-input w-full md:max-w-xs"
+              name="q"
+              placeholder="Search name / SKU"
+              defaultValue={sp.q}
+            />
+            <AdminSelect
+              className="w-full md:max-w-xs"
+              name="stock"
+              defaultValue={sp.stock ?? ""}
+              placeholder="All stock"
+              options={[{ value: "low", label: "Low stock only" }]}
+            />
+            <SubmitButton pendingLabel="Filtering…">Filter</SubmitButton>
+            {q || lowOnly ? (
+              <Link href="/admin/stock" className="btn-secondary">
+                Clear
+              </Link>
+            ) : null}
+          </form>
+        </AdminCard>
       </div>
 
-      <AdminCard>
-        <form className="flex flex-wrap gap-3">
-          <input
-            className="admin-input w-full md:max-w-xs"
-            name="q"
-            placeholder="Search name / SKU"
-            defaultValue={sp.q}
-          />
-          <AdminSelect
-            className="w-full md:max-w-xs"
-            name="stock"
-            defaultValue={sp.stock ?? ""}
-            placeholder="All stock"
-            options={[{ value: "low", label: "Low stock only" }]}
-          />
-          <SubmitButton pendingLabel="Filtering…">Filter</SubmitButton>
-          {q || lowOnly ? (
-            <Link href="/admin/stock" className="btn-secondary">
-              Clear
-            </Link>
-          ) : null}
-        </form>
-      </AdminCard>
-
+      <div className="min-h-0 flex-1">
       <AdminResponsiveList
+        fill
         cards={
           items.length ? (
             items.map((item) => {
@@ -298,6 +304,7 @@ export default async function StockPage({
           </table>
         }
       />
-    </div>
+      </div>
+    </AdminFillPage>
   );
 }

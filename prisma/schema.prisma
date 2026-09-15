@@ -301,23 +301,26 @@ model StockVariant {
 }
 
 model StockMovement {
-  id          String            @id @default(cuid())
-  itemId      String
-  variantId   String?
-  branchId    String
-  type        StockMovementType
-  quantity    Int
-  unitPrice   Decimal?          @db.Decimal(10, 2)
-  memberId    String?
-  createdById String
-  notes       String?
-  createdAt   DateTime          @default(now())
-  item        StockItem         @relation(fields: [itemId], references: [id])
-  variant     StockVariant?     @relation(fields: [variantId], references: [id])
-  branch      Branch            @relation(fields: [branchId], references: [id])
-  member      Member?           @relation(fields: [memberId], references: [id])
-  createdBy   User              @relation(fields: [createdById], references: [id])
-  cashEntry   CashEntry?
+  id           String            @id @default(cuid())
+  itemId       String
+  variantId    String?
+  branchId     String
+  type         StockMovementType
+  quantity     Int
+  unitPrice    Decimal?          @db.Decimal(10, 2)
+  unitCost     Decimal?          @db.Decimal(10, 2)
+  itemName     String?
+  variantLabel String?
+  memberId     String?
+  createdById  String
+  notes        String?
+  createdAt    DateTime          @default(now())
+  item         StockItem         @relation(fields: [itemId], references: [id])
+  variant      StockVariant?     @relation(fields: [variantId], references: [id])
+  branch       Branch            @relation(fields: [branchId], references: [id])
+  member       Member?           @relation(fields: [memberId], references: [id])
+  createdBy    User              @relation(fields: [createdById], references: [id])
+  cashEntry    CashEntry?
 }
 
 model CashAccount {

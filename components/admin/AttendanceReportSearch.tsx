@@ -1,76 +1,52 @@
 "use client";
 
-import { Suspense, useState } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { SubmitButton } from "@/components/admin/ui";
 
-function AttendanceReportSearchInner({
+export function AttendanceReportSearch({
   placeholder,
-  defaultValue,
+  value,
+  onSearch,
 }: {
   placeholder: string;
-  defaultValue: string;
+  value: string;
+  onSearch: (q: string) => void;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [value, setValue] = useState(defaultValue);
+  const [draft, setDraft] = useState(value);
 
-  function apply(nextQ: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    const trimmed = nextQ.trim();
-    if (trimmed) params.set("q", trimmed);
-    else params.delete("q");
-    params.delete("page");
-    const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
-  }
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
 
   return (
     <form
       className="flex flex-wrap gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        apply(value);
+        onSearch(draft);
       }}
     >
       <input
         className="admin-input w-full md:max-w-xs"
         type="search"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
       />
       <SubmitButton pendingLabel="Searching…">Search</SubmitButton>
-      {defaultValue ? (
+      {value ? (
         <button
           type="button"
           className="btn-secondary"
           onClick={() => {
-            setValue("");
-            apply("");
+            setDraft("");
+            onSearch("");
           }}
         >
           Clear
         </button>
       ) : null}
     </form>
-  );
-}
-
-export function AttendanceReportSearch({
-  placeholder,
-  defaultValue = "",
-}: {
-  placeholder: string;
-  defaultValue?: string;
-}) {
-  return (
-    <Suspense
-      fallback={<div className="h-10 w-full max-w-xs animate-pulse rounded-lg border border-[var(--admin-border)] bg-gray-50" />}
-    >
-      <AttendanceReportSearchInner placeholder={placeholder} defaultValue={defaultValue} />
-    </Suspense>
   );
 }

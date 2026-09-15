@@ -117,11 +117,13 @@ export function AdminAppShell({
         </header>
         <main
           className={cn(
-            "min-h-0 flex-1 overflow-y-auto overflow-x-clip p-4 lg:p-6",
+            "flex min-h-0 flex-1 flex-col overflow-hidden p-4 lg:p-6",
             "pb-[max(1rem,env(safe-area-inset-bottom))]",
           )}
         >
-          {children}
+          <div className="min-h-0 flex-1 overflow-y-auto overflow-x-clip has-[[data-admin-fill-page]]:overflow-hidden">
+            {children}
+          </div>
         </main>
       </div>
     </div>

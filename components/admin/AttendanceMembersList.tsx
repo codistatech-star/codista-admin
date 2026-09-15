@@ -13,9 +13,16 @@ function trendLabel(trend: number | null) {
   return "→ 0%";
 }
 
-export function AttendanceMembersList({ members }: { members: AttendanceMemberStat[] }) {
+export function AttendanceMembersList({
+  members,
+  fill,
+}: {
+  members: AttendanceMemberStat[];
+  fill?: boolean;
+}) {
   return (
     <AdminResponsiveList
+      fill={fill}
       cards={
         members.length ? (
           members.map((m) => (

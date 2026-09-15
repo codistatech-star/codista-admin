@@ -4,6 +4,13 @@ import { Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AdminSelect } from "@/components/admin/ui/AdminSelect";
 
+function currentSearchParams(fallback: URLSearchParams) {
+  if (typeof window !== "undefined") {
+    return new URLSearchParams(window.location.search);
+  }
+  return new URLSearchParams(fallback.toString());
+}
+
 function ReportBatchFilterInner({
   month,
   batch,
@@ -23,7 +30,7 @@ function ReportBatchFilterInner({
       value={batch}
       options={options}
       onChange={(next) => {
-        const params = new URLSearchParams(searchParams.toString());
+        const params = currentSearchParams(new URLSearchParams(searchParams.toString()));
         params.set("month", month);
         if (next) params.set("batch", next);
         else params.delete("batch");

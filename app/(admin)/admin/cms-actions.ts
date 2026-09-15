@@ -209,10 +209,13 @@ async function recordStockMovementsInternal({
 
     for (const line of lines) {
       const item = itemById.get(line.itemId)!;
+      const variant = item.variants.find((v) => v.id === line.variantId)!;
       await tx.stockVariant.update({
         where: { id: line.variantId },
         data: { quantity: { increment: deltaSign * line.quantity } },
       });
+
+      const unitCost = Number(variant.costPrice ?? item.costPrice);
 
       const movement = await tx.stockMovement.create({
         data: {
@@ -222,6 +225,9 @@ async function recordStockMovementsInternal({
           type,
           quantity: line.quantity,
           unitPrice: line.unitPrice,
+          unitCost,
+          itemName: item.name,
+          variantLabel: variant.label,
           memberId,
           createdById: user.id,
           notes,

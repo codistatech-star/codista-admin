@@ -20,10 +20,19 @@ export type CashflowLedgerRow = {
   amount: number;
 };
 
-export function CashflowReportLedger({ entries }: { entries: CashflowLedgerRow[] }) {
+export function CashflowReportLedger({
+  entries,
+  fill,
+}: {
+  entries: CashflowLedgerRow[];
+  fill?: boolean;
+}) {
   return (
-    <AdminCard title="Ledger">
-      <AdminListSearch placeholder="Search date, account, type, category…">
+    <AdminCard
+      title="Ledger"
+      className={fill ? "flex min-h-0 flex-1 flex-col overflow-hidden" : undefined}
+    >
+      <AdminListSearch fill={fill} placeholder="Search date, account, type, category…">
         {(q) => {
           const filtered = entries.filter((e) =>
             matchesSearch(
@@ -39,6 +48,7 @@ export function CashflowReportLedger({ entries }: { entries: CashflowLedgerRow[]
 
           return (
             <AdminResponsiveList
+              fill={fill}
               cards={
                 filtered.length ? (
                   filtered.map((e) => (

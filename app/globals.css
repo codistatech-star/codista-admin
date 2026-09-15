@@ -198,23 +198,28 @@
 
 .admin-app .admin-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.875rem;
   text-align: left;
 }
 
 .admin-app .admin-table thead {
   background: #f9fafb;
-  border-bottom: 1px solid var(--admin-border);
 }
 
 .admin-app .admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   padding: 0.75rem 1rem;
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--admin-muted);
+  background: #f9fafb;
+  border-bottom: 1px solid var(--admin-border);
 }
 
 .admin-app .admin-table td {

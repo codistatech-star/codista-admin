@@ -4,6 +4,13 @@ import { Suspense } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { AdminMonthPicker } from "@/components/admin/ui/AdminMonthPicker";
 
+function currentSearchParams(fallback: URLSearchParams) {
+  if (typeof window !== "undefined") {
+    return new URLSearchParams(window.location.search);
+  }
+  return new URLSearchParams(fallback.toString());
+}
+
 function ReportMonthPickerInner({ month }: { month: string }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -15,7 +22,7 @@ function ReportMonthPickerInner({ month }: { month: string }) {
       align="end"
       value={month}
       onChange={(next) => {
-        const params = new URLSearchParams(searchParams.toString());
+        const params = currentSearchParams(new URLSearchParams(searchParams.toString()));
         params.set("month", next);
         params.delete("page");
         params.delete("q");

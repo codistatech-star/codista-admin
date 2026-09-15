@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   PageHeader,
   AdminCard,
+  AdminFillPage,
   SubmitButton,
   AdminSelect,
   AdminEmptyRow,
@@ -82,50 +83,55 @@ export default async function MembersPage({
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Members"
-        description={`${filtered.length} shown`}
-        actions={
-          <Link href="/admin/members/new" className="btn-primary">
-            Add member
-          </Link>
-        }
-      />
+    <AdminFillPage>
+      <div className="shrink-0 space-y-4 pb-4">
+        <PageHeader
+          className="!mb-0"
+          title="Members"
+          description={`${filtered.length} shown`}
+          actions={
+            <Link href="/admin/members/new" className="btn-primary">
+              Add member
+            </Link>
+          }
+        />
 
-      <AdminCard>
-        <form className="flex flex-wrap gap-3">
-          <input
-            className="admin-input w-full md:max-w-xs"
-            name="q"
-            placeholder="Search name / code / mobile"
-            defaultValue={sp.q}
-          />
-          <AdminSelect
-            className="w-full md:max-w-xs"
-            name="batchId"
-            defaultValue={sp.batchId ?? ""}
-            placeholder="All batches"
-            options={batches.map((b) => ({ value: b.id, label: b.name }))}
-          />
-          <AdminSelect
-            className="w-full md:max-w-xs"
-            name="status"
-            defaultValue={statusFilter}
-            placeholder="All statuses"
-            options={[
-              { value: "ACTIVE", label: "Active" },
-              { value: "EXPIRING", label: "Expiring" },
-              { value: "EXPIRED", label: "Expired" },
-              { value: "INACTIVE", label: "Inactive" },
-              { value: "NONE", label: "No membership" },
-            ]}
-          />
-          <SubmitButton pendingLabel="Filtering…">Filter</SubmitButton>
-        </form>
-      </AdminCard>
+        <AdminCard>
+          <form className="flex flex-wrap gap-3">
+            <input
+              className="admin-input w-full md:max-w-xs"
+              name="q"
+              placeholder="Search name / code / mobile"
+              defaultValue={sp.q}
+            />
+            <AdminSelect
+              className="w-full md:max-w-xs"
+              name="batchId"
+              defaultValue={sp.batchId ?? ""}
+              placeholder="All batches"
+              options={batches.map((b) => ({ value: b.id, label: b.name }))}
+            />
+            <AdminSelect
+              className="w-full md:max-w-xs"
+              name="status"
+              defaultValue={statusFilter}
+              placeholder="All statuses"
+              options={[
+                { value: "ACTIVE", label: "Active" },
+                { value: "EXPIRING", label: "Expiring" },
+                { value: "EXPIRED", label: "Expired" },
+                { value: "INACTIVE", label: "Inactive" },
+                { value: "NONE", label: "No membership" },
+              ]}
+            />
+            <SubmitButton pendingLabel="Filtering…">Filter</SubmitButton>
+          </form>
+        </AdminCard>
+      </div>
 
+      <div className="min-h-0 flex-1">
       <AdminResponsiveList
+        fill
         cards={
           filtered.length ? (
             filtered.map((m) => {
@@ -220,6 +226,7 @@ export default async function MembersPage({
           </table>
         }
       />
-    </div>
+      </div>
+    </AdminFillPage>
   );
 }

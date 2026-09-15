@@ -1,6 +1,7 @@
 import {
   PageHeader,
   AdminCard,
+  AdminFillPage,
   SubmitButton,
   AdminSelect,
   AdminDatePicker,
@@ -130,34 +131,39 @@ export default async function AttendancePage({
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Attendance"
-        description="Mark by date and batch. Roster = members mapped to that batch."
-      />
+    <AdminFillPage>
+      <div className="shrink-0 space-y-4 pb-4">
+        <PageHeader
+          className="!mb-0"
+          title="Attendance"
+          description="Mark by date and batch. Roster = members mapped to that batch."
+        />
 
-      <AdminCard>
-        <form className="flex flex-wrap gap-3">
-          <label className="admin-label w-full md:w-auto">
-            Date
-            <AdminDatePicker className="mt-1 w-full md:w-auto" name="date" defaultValue={dateStr} />
-          </label>
-          <label className="admin-label w-full md:w-auto">
-            Batch
-            <AdminSelect
-              className="mt-1 w-full md:min-w-[12rem] md:max-w-xs"
-              name="batchId"
-              defaultValue={batchId}
-              options={batches.map((b) => ({ value: b.id, label: b.name }))}
-            />
-          </label>
-          <SubmitButton className="self-end">Load roster</SubmitButton>
-        </form>
-      </AdminCard>
+        <AdminCard>
+          <form className="flex flex-wrap gap-3">
+            <label className="admin-label w-full md:w-auto">
+              Date
+              <AdminDatePicker className="mt-1 w-full md:w-auto" name="date" defaultValue={dateStr} />
+            </label>
+            <label className="admin-label w-full md:w-auto">
+              Batch
+              <AdminSelect
+                className="mt-1 w-full md:min-w-[12rem] md:max-w-xs"
+                name="batchId"
+                defaultValue={batchId}
+                options={batches.map((b) => ({ value: b.id, label: b.name }))}
+              />
+            </label>
+            <SubmitButton className="self-end">Load roster</SubmitButton>
+          </form>
+        </AdminCard>
+      </div>
 
       {batchId ? (
         <>
+          <div className="min-h-0 flex-1">
           <AdminResponsiveList
+            fill
             cards={
               roster.length ? (
                 roster.map((m) => (
@@ -209,8 +215,9 @@ export default async function AttendancePage({
               </table>
             }
           />
+          </div>
           {sessionId ? (
-            <p className="border border-[var(--admin-border)] bg-white px-4 py-2 text-xs text-[var(--admin-muted)]">
+            <p className="mt-3 shrink-0 border border-[var(--admin-border)] bg-white px-4 py-2 text-xs text-[var(--admin-muted)]">
               Session saved. Taken by defaults to you. Users available: {users.length}.
             </p>
           ) : null}
@@ -220,6 +227,6 @@ export default async function AttendancePage({
           <p className="text-sm text-[var(--admin-muted)]">Create a batch in Settings first.</p>
         </AdminCard>
       )}
-    </div>
+    </AdminFillPage>
   );
 }
