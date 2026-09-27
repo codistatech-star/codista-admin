@@ -14,7 +14,6 @@ import {
 import { AddStockItemModal } from "@/components/admin/AddStockItemModal";
 import { RecordStockMovementModal } from "@/components/admin/RecordStockMovementModal";
 import { StockRowActions } from "@/components/admin/StockRowActions";
-import { StockVariantsModal } from "@/components/admin/StockVariantsModal";
 import type { StockItemDTO } from "@/components/admin/stock-types";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
@@ -25,31 +24,19 @@ function toItemDTO(item: {
   id: string;
   name: string;
   sku: string | null;
+  quantity: number;
   salePrice: { toString(): string } | number;
   costPrice: { toString(): string } | number;
   lowStockAt: number;
-  variants: {
-    id: string;
-    label: string;
-    quantity: number;
-    salePrice: { toString(): string } | number | null;
-    costPrice: { toString(): string } | number | null;
-  }[];
 }): StockItemDTO {
   return {
     id: item.id,
     name: item.name,
     sku: item.sku,
+    quantity: item.quantity,
     salePrice: Number(item.salePrice),
     costPrice: Number(item.costPrice),
     lowStockAt: item.lowStockAt,
-    variants: item.variants.map((v) => ({
-      id: v.id,
-      label: v.label,
-      quantity: v.quantity,
-      salePrice: v.salePrice == null ? null : Number(v.salePrice),
-      costPrice: v.costPrice == null ? null : Number(v.costPrice),
-    })),
   };
 }
 
@@ -71,7 +58,6 @@ export default async function StockPage({
   const [allItems, members, monthSales] = await Promise.all([
     prisma.stockItem.findMany({
       where: { isActive: true },
-      include: { variants: { orderBy: { label: "asc" } } },
       orderBy: { name: "asc" },
     }),
     branchId
@@ -87,17 +73,11 @@ export default async function StockPage({
       : Promise.resolve({ unitsSold: 0, revenue: 0, cost: 0, profit: 0, lines: [] }),
   ]);
 
-  const unitsOnHand = allItems.reduce(
-    (n, item) => n + item.variants.reduce((qSum, v) => qSum + v.quantity, 0),
-    0,
-  );
-  const lowCount = allItems.filter((item) => {
-    const qty = item.variants.reduce((n, v) => n + v.quantity, 0);
-    return qty <= item.lowStockAt;
-  }).length;
+  const unitsOnHand = allItems.reduce((n, item) => n + item.quantity, 0);
+  const lowCount = allItems.filter((item) => item.quantity <= item.lowStockAt).length;
 
   const stockableItems = allItems.map(toItemDTO);
-  const canRecord = stockableItems.some((i) => i.variants.length > 0);
+  const canRecord = stockableItems.length > 0;
 
   let items = stockableItems;
   if (q) {
@@ -109,10 +89,7 @@ export default async function StockPage({
     );
   }
   if (lowOnly) {
-    items = items.filter((item) => {
-      const qty = item.variants.reduce((n, v) => n + v.quantity, 0);
-      return qty <= item.lowStockAt;
-    });
+    items = items.filter((item) => item.quantity <= item.lowStockAt);
   }
 
   const emptyMessage =
@@ -147,7 +124,7 @@ export default async function StockPage({
       <PageHeader
         className="!mb-3"
         title="Stock"
-        description="Catalogue, sizes, purchases and sales"
+        description="Catalogue, purchases and sales"
         actions={
           <>
             <AddStockItemModal />
@@ -214,8 +191,7 @@ export default async function StockPage({
         cards={
           items.length ? (
             items.map((item) => {
-              const qty = item.variants.reduce((n, v) => n + v.quantity, 0);
-              const low = qty <= item.lowStockAt;
+              const low = item.quantity <= item.lowStockAt;
               return (
                 <AdminListCard key={item.id}>
                   <div className="flex items-start justify-between gap-3">
@@ -233,13 +209,8 @@ export default async function StockPage({
                   </div>
                   <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <dt className="text-xs text-[var(--admin-muted)]">Variants / qty</dt>
-                      <dd>
-                        <StockVariantsModal
-                          item={item}
-                          trigger={`${item.variants.length} / ${qty}`}
-                        />
-                      </dd>
+                      <dt className="text-xs text-[var(--admin-muted)]">Qty</dt>
+                      <dd>{item.quantity}</dd>
                     </div>
                     <div>
                       <dt className="text-xs text-[var(--admin-muted)]">Sale price</dt>
@@ -264,7 +235,7 @@ export default async function StockPage({
               <tr>
                 <th>Item</th>
                 <th>SKU</th>
-                <th>Variants / qty</th>
+                <th>Qty</th>
                 <th>Sale price</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -272,18 +243,12 @@ export default async function StockPage({
             </thead>
             <tbody>
               {items.map((item) => {
-                const qty = item.variants.reduce((n, v) => n + v.quantity, 0);
-                const low = qty <= item.lowStockAt;
+                const low = item.quantity <= item.lowStockAt;
                 return (
                   <tr key={item.id}>
                     <td className="font-medium text-gray-900">{item.name}</td>
                     <td className="font-mono text-xs">{item.sku ?? "—"}</td>
-                    <td>
-                      <StockVariantsModal
-                        item={item}
-                        trigger={`${item.variants.length} / ${qty}`}
-                      />
-                    </td>
+                    <td>{item.quantity}</td>
                     <td>{formatINR(item.salePrice)}</td>
                     <td>
                       {low ? (

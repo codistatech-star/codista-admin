@@ -13,12 +13,33 @@ import {
   AdminModal,
 } from "@/components/admin/ui";
 import { CollectPaymentModal } from "@/components/admin/CollectPaymentModal";
+import { RfidCardField } from "@/components/admin/RfidCardField";
 import { saveMember } from "@/app/(admin)/admin/actions";
 import { previewRegistrationFees, type JoiningSlab } from "@/lib/membership";
 import { formatINR } from "@/lib/utils";
 
 export type MemberFormOption = { id: string; name: string; fee?: number };
 export type MemberFormBatch = { id: string; name: string };
+
+function toYmd(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseLocalYmd(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return undefined;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return undefined;
+  }
+  return date;
+}
 
 export type MemberFormDefaults = {
   id?: string;
@@ -37,6 +58,7 @@ export type MemberFormDefaults = {
   beltGradeId?: string;
   batchIds?: string[];
   extraClassIds?: string[];
+  rfidUid?: string;
 };
 
 export function NewMemberForm({
@@ -61,6 +83,7 @@ export function NewMemberForm({
   mode?: "create" | "edit";
 }) {
   const router = useRouter();
+  const [joiningDate, setJoiningDate] = useState(defaults?.joiningDate ?? toYmd());
   const [classPlanId, setClassPlanId] = useState(defaults?.classPlanId ?? "");
   const [extraClassIds, setExtraClassIds] = useState<string[]>(defaults?.extraClassIds ?? []);
   const [collectOpen, setCollectOpen] = useState(false);
@@ -84,8 +107,9 @@ export function NewMemberForm({
         mode === "create"
           ? joiningFeeSlabs
           : [{ fromDay: 1, toDay: 31, percent: 100 }],
+      paidAt: parseLocalYmd(joiningDate),
     });
-  }, [classPlanId, extraClassIds, plans, extras, joiningFee, joiningFeeSlabs, mode]);
+  }, [classPlanId, extraClassIds, plans, extras, joiningFee, joiningFeeSlabs, mode, joiningDate]);
 
   function validateForm(form: HTMLFormElement) {
     if (!form.reportValidity()) return false;
@@ -248,7 +272,8 @@ export function NewMemberForm({
                 className="mt-1"
                 name="joiningDate"
                 required
-                defaultValue={defaults?.joiningDate}
+                value={joiningDate}
+                onChange={setJoiningDate}
               />
             </label>
             <label className="admin-label">
@@ -292,6 +317,10 @@ export function NewMemberForm({
             </label>
           </div>
 
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <RfidCardField defaultValue={defaults?.rfidUid ?? ""} />
+          </div>
+
           <fieldset className="mt-4">
             <legend className="text-sm font-medium text-gray-700">Batches (multi)</legend>
             <div className="mt-2 flex flex-wrap gap-3">
@@ -330,8 +359,8 @@ export function NewMemberForm({
                 <strong className="text-[var(--admin-red)]">{formatINR(preview.subtotal)}</strong>
               </p>
               <p className="text-xs text-[var(--admin-muted)]">
-                Plan fee uses the day-of-month cutoff; joining fee is full. Final amount is confirmed in
-                the collect payment popup.
+                Plan fee uses the joining-date day-of-month cutoff; joining fee is full. Final amount is
+                confirmed in the collect payment popup.
               </p>
             </div>
           </AdminCard>

@@ -97,6 +97,15 @@
   }
 }
 
+.kiosk-app {
+  --admin-navy: #2f2a7a;
+  --admin-red: #e31c23;
+  min-height: 100dvh;
+  background: #2f2a7a;
+  color: #fff;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
 /* —— Admin app (logo-aligned: navy + red) —— */
 .admin-app {
   --admin-navy: #2f2a7a;

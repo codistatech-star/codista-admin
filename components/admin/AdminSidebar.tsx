@@ -42,6 +42,7 @@ const navItems: NavItem[] = [
     children: [
       { href: "/admin/members", label: "List" },
       { href: "/admin/attendance", label: "Attendance" },
+      { href: "/kiosk", label: "Scan kiosk" },
     ],
   },
   { kind: "link", href: "/admin/stock", label: "Stock", icon: "stock" },
@@ -85,6 +86,7 @@ const navItems: NavItem[] = [
       { href: "/admin/settings/belts", label: "Belt grades" },
       { href: "/admin/settings/branches", label: "Branches" },
       { href: "/admin/settings/users", label: "Users" },
+      { href: "/admin/settings/kiosk-devices", label: "Kiosk devices" },
     ],
   },
 ];

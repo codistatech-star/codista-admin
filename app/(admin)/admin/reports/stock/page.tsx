@@ -91,12 +91,12 @@ export default async function StockReportPage({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-gray-900">{line.itemName}</p>
-                      <p className="text-xs text-[var(--admin-muted)]">
-                        {line.variantLabel ?? "—"}
-                        {line.memberName
-                          ? ` · ${line.memberName}${line.memberCode ? ` (${line.memberCode})` : ""}`
-                          : ""}
-                      </p>
+                      {line.memberName ? (
+                        <p className="text-xs text-[var(--admin-muted)]">
+                          {line.memberName}
+                          {line.memberCode ? ` (${line.memberCode})` : ""}
+                        </p>
+                      ) : null}
                       <p className="mt-1 text-xs text-[var(--admin-muted)]">
                         {formatDate(line.createdAt)} · qty {line.quantity}
                       </p>
@@ -124,7 +124,6 @@ export default async function StockReportPage({
                 <tr>
                   <th>Date</th>
                   <th>Item</th>
-                  <th>Variant</th>
                   <th>Member</th>
                   <th>Qty</th>
                   <th>Sale</th>
@@ -137,7 +136,6 @@ export default async function StockReportPage({
                   <tr key={line.id}>
                     <td>{formatDate(line.createdAt)}</td>
                     <td className="font-medium text-gray-900">{line.itemName}</td>
-                    <td>{line.variantLabel ?? "—"}</td>
                     <td>
                       {line.memberName
                         ? `${line.memberName}${line.memberCode ? ` (${line.memberCode})` : ""}`
@@ -156,7 +154,7 @@ export default async function StockReportPage({
                   </tr>
                 ))}
                 {!salesReport.lines.length ? (
-                  <AdminEmptyRow colSpan={8} message="No stock sales this month." />
+                  <AdminEmptyRow colSpan={7} message="No stock sales this month." />
                 ) : null}
               </tbody>
             </table>

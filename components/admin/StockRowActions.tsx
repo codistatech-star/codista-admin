@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { AddStockItemModal } from "@/components/admin/AddStockItemModal";
-import { StockVariantsModal } from "@/components/admin/StockVariantsModal";
 import type { StockItemDTO } from "@/components/admin/stock-types";
 
 function EditIcon() {
@@ -24,7 +23,6 @@ export function StockRowActions({ item }: { item: StockItemDTO }) {
 
   return (
     <div className="flex items-center gap-1.5">
-      <StockVariantsModal item={item} />
       <button
         type="button"
         className="admin-icon-btn"

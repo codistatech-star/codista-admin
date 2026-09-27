@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AdminModal, AdminSelect } from "@/components/admin/ui";
 import { recordStockMovements } from "@/app/(admin)/admin/cms-actions";
 import {
-  resolveVariantUnitPrice,
+  resolveItemUnitPrice,
   type StockItemDTO,
   type StockMemberOption,
 } from "@/components/admin/stock-types";
@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 type Line = {
   key: string;
   itemId: string;
-  variantId: string;
   quantity: string;
   unitPrice: string;
 };
@@ -24,7 +23,6 @@ function newLine(): Line {
   return {
     key: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     itemId: "",
-    variantId: "",
     quantity: "1",
     unitPrice: "",
   };
@@ -53,7 +51,7 @@ export function RecordStockMovementModal({
   const [pending, startTransition] = useTransition();
 
   const itemOptions = useMemo(
-    () => items.map((i) => ({ value: i.id, label: i.name })),
+    () => items.map((i) => ({ value: i.id, label: `${i.name} (${i.quantity})` })),
     [items],
   );
 
@@ -71,15 +69,10 @@ export function RecordStockMovementModal({
   }
 
   function onItemChange(key: string, itemId: string) {
-    updateLine(key, { itemId, variantId: "", unitPrice: "" });
-  }
-
-  function onVariantChange(key: string, variantId: string, itemId: string) {
     const item = items.find((i) => i.id === itemId);
-    const variant = item?.variants.find((v) => v.id === variantId);
-    const price = item ? resolveVariantUnitPrice(item, variant, type) : null;
+    const price = item ? resolveItemUnitPrice(item, type) : null;
     updateLine(key, {
-      variantId,
+      itemId,
       unitPrice: price == null ? "" : String(price),
     });
   }
@@ -88,10 +81,9 @@ export function RecordStockMovementModal({
     setType(next);
     setLines((prev) =>
       prev.map((line) => {
-        if (!line.itemId || !line.variantId) return { ...line, unitPrice: "" };
+        if (!line.itemId) return { ...line, unitPrice: "" };
         const item = items.find((i) => i.id === line.itemId);
-        const variant = item?.variants.find((v) => v.id === line.variantId);
-        const price = item ? resolveVariantUnitPrice(item, variant, next) : null;
+        const price = item ? resolveItemUnitPrice(item, next) : null;
         return { ...line, unitPrice: price == null ? "" : String(price) };
       }),
     );
@@ -111,13 +103,12 @@ export function RecordStockMovementModal({
 
     const payload = lines.map((l) => ({
       itemId: l.itemId,
-      variantId: l.variantId,
       quantity: Math.abs(Number(l.quantity) || 0),
       unitPrice: l.unitPrice === "" ? null : Number(l.unitPrice),
     }));
 
-    if (!payload.length || payload.some((p) => !p.itemId || !p.variantId || !p.quantity)) {
-      setError("Each line needs an item, variant, and quantity.");
+    if (!payload.length || payload.some((p) => !p.itemId || !p.quantity)) {
+      setError("Each line needs an item and quantity.");
       return;
     }
 
@@ -162,160 +153,137 @@ export function RecordStockMovementModal({
       className="!max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="admin-label">
-              Type
-              <AdminSelect
-                className="mt-1"
-                value={type}
-                onChange={onTypeChange}
-                required
-                options={[
-                  { value: "PURCHASE", label: "Purchase" },
-                  { value: "SALE", label: "Sale" },
-                  { value: "ISSUE", label: "Issue" },
-                  { value: "DAMAGE", label: "Damage" },
-                ]}
-              />
-            </label>
-            <label className="admin-label">
-              Member {type === "SALE" ? "(optional)" : ""}
-              <AdminSelect
-                className="mt-1"
-                value={memberId}
-                onChange={setMemberId}
-                placeholder="None"
-                options={members.map((m) => ({
-                  value: m.id,
-                  label: `${m.code} — ${m.name}`,
-                }))}
-              />
-            </label>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-900">Lines</p>
-              <button
-                type="button"
-                className="btn-secondary text-xs"
-                onClick={() => setLines((prev) => [...prev, newLine()])}
-              >
-                Add line
-              </button>
-            </div>
-
-            {lines.map((line, index) => {
-              const item = items.find((i) => i.id === line.itemId);
-              const variantOptions =
-                item?.variants.map((v) => ({
-                  value: v.id,
-                  label: `${v.label} (${v.quantity})`,
-                })) ?? [];
-
-              return (
-                <div
-                  key={line.key}
-                  className="grid items-start gap-2 rounded-lg border border-[var(--admin-border)] p-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1.1fr)_5.25rem_6rem_2.5rem]"
-                >
-                  <label className="admin-label min-w-0">
-                    {index === 0 ? "Item" : <span className="sr-only">Item</span>}
-                    <AdminSelect
-                      className="mt-1"
-                      value={line.itemId}
-                      onChange={(v) => onItemChange(line.key, v)}
-                      placeholder="Select item"
-                      required
-                      options={itemOptions}
-                    />
-                  </label>
-                  <label className="admin-label min-w-0">
-                    {index === 0 ? "Variant" : <span className="sr-only">Variant</span>}
-                    <AdminSelect
-                      className="mt-1"
-                      value={line.variantId}
-                      onChange={(v) => onVariantChange(line.key, v, line.itemId)}
-                      placeholder={item ? "Select variant" : "Pick item first"}
-                      required
-                      disabled={!line.itemId || !variantOptions.length}
-                      options={variantOptions}
-                    />
-                  </label>
-                  <label className="admin-label">
-                    {index === 0 ? "Qty" : <span className="sr-only">Qty</span>}
-                    <input
-                      className="admin-input mt-1"
-                      type="number"
-                      min={1}
-                      value={line.quantity}
-                      onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
-                      required
-                    />
-                  </label>
-                  <label className="admin-label">
-                    {index === 0 ? "Unit ₹" : <span className="sr-only">Unit price</span>}
-                    <input
-                      className="admin-input mt-1"
-                      type="number"
-                      step="0.01"
-                      value={line.unitPrice}
-                      onChange={(e) => updateLine(line.key, { unitPrice: e.target.value })}
-                      placeholder={type === "SALE" || type === "PURCHASE" ? "Price" : "—"}
-                    />
-                  </label>
-                  <label className="admin-label">
-                    {index === 0 ? (
-                      <span aria-hidden className="invisible select-none">
-                        Qty
-                      </span>
-                    ) : (
-                      <span className="sr-only">Remove line</span>
-                    )}
-                    <button
-                      type="button"
-                      className="admin-icon-btn is-danger mt-1 !h-10 !w-10 shrink-0 !rounded-lg disabled:cursor-not-allowed disabled:opacity-40"
-                      title="Remove line"
-                      aria-label="Remove line"
-                      disabled={lines.length === 1}
-                      onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-                        <path
-                          d="M18 6 6 18M6 6l12 12"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                      </svg>
-                    </button>
-                  </label>
-                </div>
-              );
-            })}
-          </div>
-
+        <div className="grid gap-3 sm:grid-cols-2">
           <label className="admin-label">
-            Notes
-            <input
-              className="admin-input mt-1"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional notes"
+            Type
+            <AdminSelect
+              className="mt-1"
+              value={type}
+              onChange={onTypeChange}
+              required
+              options={[
+                { value: "PURCHASE", label: "Purchase" },
+                { value: "SALE", label: "Sale" },
+                { value: "ISSUE", label: "Issue" },
+                { value: "DAMAGE", label: "Damage" },
+              ]}
             />
           </label>
+          <label className="admin-label">
+            Member {type === "SALE" ? "(optional)" : ""}
+            <AdminSelect
+              className="mt-1"
+              value={memberId}
+              onChange={setMemberId}
+              placeholder="None"
+              options={members.map((m) => ({
+                value: m.id,
+                label: `${m.code} — ${m.name}`,
+              }))}
+            />
+          </label>
+        </div>
 
-          {type === "SALE" || type === "PURCHASE" ? (
-            <p className="text-sm font-semibold text-gray-900">
-              Ticket total: {formatINR(ticketTotal)}
-            </p>
-          ) : null}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-gray-900">Lines</p>
+            <button
+              type="button"
+              className="btn-secondary text-xs"
+              onClick={() => setLines((prev) => [...prev, newLine()])}
+            >
+              Add line
+            </button>
+          </div>
 
-          {error ? <p className="text-sm text-[var(--admin-red)]">{error}</p> : null}
+          {lines.map((line, index) => (
+            <div
+              key={line.key}
+              className="grid items-start gap-2 rounded-lg border border-[var(--admin-border)] p-3 sm:grid-cols-[minmax(0,1.6fr)_5.25rem_6rem_2.5rem]"
+            >
+              <label className="admin-label min-w-0">
+                {index === 0 ? "Item" : <span className="sr-only">Item</span>}
+                <AdminSelect
+                  className="mt-1"
+                  value={line.itemId}
+                  onChange={(v) => onItemChange(line.key, v)}
+                  placeholder="Select item"
+                  required
+                  options={itemOptions}
+                />
+              </label>
+              <label className="admin-label">
+                {index === 0 ? "Qty" : <span className="sr-only">Qty</span>}
+                <input
+                  className="admin-input mt-1"
+                  type="number"
+                  min={1}
+                  value={line.quantity}
+                  onChange={(e) => updateLine(line.key, { quantity: e.target.value })}
+                  required
+                />
+              </label>
+              <label className="admin-label">
+                {index === 0 ? "Unit ₹" : <span className="sr-only">Unit price</span>}
+                <input
+                  className="admin-input mt-1"
+                  type="number"
+                  step="0.01"
+                  value={line.unitPrice}
+                  onChange={(e) => updateLine(line.key, { unitPrice: e.target.value })}
+                  placeholder={type === "SALE" || type === "PURCHASE" ? "Price" : "—"}
+                />
+              </label>
+              <label className="admin-label">
+                {index === 0 ? (
+                  <span aria-hidden className="invisible select-none">
+                    Qty
+                  </span>
+                ) : (
+                  <span className="sr-only">Remove line</span>
+                )}
+                <button
+                  type="button"
+                  className="admin-icon-btn is-danger mt-1 !h-10 !w-10 shrink-0 !rounded-lg disabled:cursor-not-allowed disabled:opacity-40"
+                  title="Remove line"
+                  aria-label="Remove line"
+                  disabled={lines.length === 1}
+                  onClick={() => setLines((prev) => prev.filter((l) => l.key !== line.key))}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M18 6 6 18M6 6l12 12"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </button>
+              </label>
+            </div>
+          ))}
+        </div>
 
-          <button type="submit" className="btn-primary w-full" disabled={pending}>
-            {pending ? "Recording…" : "Record movement"}
-          </button>
-        </form>
+        <label className="admin-label">
+          Notes
+          <input
+            className="admin-input mt-1"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Optional notes"
+          />
+        </label>
+
+        {type === "SALE" || type === "PURCHASE" ? (
+          <p className="text-sm font-semibold text-gray-900">Ticket total: {formatINR(ticketTotal)}</p>
+        ) : null}
+
+        {error ? <p className="text-sm text-[var(--admin-red)]">{error}</p> : null}
+
+        <button type="submit" className="btn-primary w-full" disabled={pending}>
+          {pending ? "Recording…" : "Record movement"}
+        </button>
+      </form>
     </AdminModal>
   );
 }

@@ -5,12 +5,10 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { Role } from "@prisma/client";
 import { requireAdmin, requireSession, getActiveBranchId, canAccessBranch } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
-import {
-  computePaymentQuote,
-  nextMemberCode,
-  nextReceiptNo,
-  getAcademySettings,
-} from "@/lib/membership";
+import { upsertAttendanceMark } from "@/lib/attendance";
+import { generateKioskToken, hashKioskToken, kioskTokenHint } from "@/lib/kiosk-token";
+import { computePaymentQuote, nextMemberCode, nextReceiptNo } from "@/lib/membership";
+import { normalizeRfidUid } from "@/lib/rfid";
 
 function parseSlabs(raw: string) {
   const slabs = JSON.parse(raw) as { fromDay: number; toDay: number; percent: number }[];
@@ -275,16 +273,48 @@ export async function saveMember(formData: FormData) {
     branchId,
   };
 
+  const rfidUidRaw = String(formData.get("rfidUid") || "");
+  const rfidUid = rfidUidRaw ? normalizeRfidUid(rfidUidRaw) : null;
+  if (rfidUid) {
+    const taken = await prisma.member.findFirst({
+      where: { rfidUid, ...(id ? { NOT: { id } } : {}) },
+      select: { code: true, name: true },
+    });
+    if (taken) throw new Error(`Card already assigned to ${taken.code} — ${taken.name}`);
+  }
+
+  const existingMember = id
+    ? await prisma.member.findUnique({
+        where: { id },
+        select: { rfidUid: true },
+      })
+    : null;
+  const rfidChanged = (existingMember?.rfidUid ?? null) !== rfidUid;
+
   let memberId = id;
   let code = "";
   if (id) {
-    const updated = await prisma.member.update({ where: { id }, data });
+    const updated = await prisma.member.update({
+      where: { id },
+      data: {
+        ...data,
+        rfidUid,
+        ...(rfidChanged ? { rfidAssignedAt: rfidUid ? new Date() : null } : {}),
+      },
+    });
     code = updated.code;
     await prisma.memberBatch.deleteMany({ where: { memberId: id } });
     await prisma.memberExtraClass.deleteMany({ where: { memberId: id } });
   } else {
     code = await nextMemberCode();
-    const created = await prisma.member.create({ data: { ...data, code } });
+    const created = await prisma.member.create({
+      data: {
+        ...data,
+        code,
+        rfidUid,
+        rfidAssignedAt: rfidUid ? new Date() : null,
+      },
+    });
     memberId = created.id;
   }
 
@@ -424,38 +454,68 @@ export async function markAttendance(formData: FormData) {
   const date = new Date(String(formData.get("date")));
   const batchId = String(formData.get("batchId"));
   const takenById = String(formData.get("takenById") || "") || user.id;
-  const settings = await getAcademySettings();
-
-  const session = await prisma.attendanceSession.upsert({
-    where: {
-      date_batchId_branchId: { date, batchId, branchId },
-    },
-    create: { date, batchId, branchId, takenById },
-    update: { takenById },
-  });
-
   const memberId = String(formData.get("memberId"));
   const isPresent = formData.get("isPresent") === "true";
 
-  const member = await prisma.member.findUniqueOrThrow({
-    where: { id: memberId },
-    include: { membership: true },
-  });
-  if (!member.isActive) throw new Error("Member inactive");
-  if (
-    !settings.allowAttendanceWhenExpired &&
-    member.membership &&
-    member.membership.validUntil < date
-  ) {
-    throw new Error("Membership expired — attendance blocked by settings");
-  }
-
-  await prisma.attendanceEntry.upsert({
-    where: { sessionId_memberId: { sessionId: session.id, memberId } },
-    create: { sessionId: session.id, memberId, isPresent },
-    update: { isPresent },
+  await upsertAttendanceMark({
+    memberId,
+    branchId,
+    date,
+    batchId,
+    isPresent,
+    source: "MANUAL",
+    takenById,
   });
 
   revalidatePath("/admin/attendance");
   revalidatePath("/admin/reports/attendance");
+}
+
+export async function createKioskDevice(formData: FormData) {
+  await requireAdmin();
+  const name = String(formData.get("name") || "").trim();
+  const branchId = String(formData.get("branchId") || "");
+  if (!name) throw new Error("Device name is required");
+  if (!branchId) throw new Error("Branch is required");
+
+  const branch = await prisma.branch.findUnique({ where: { id: branchId } });
+  if (!branch) throw new Error("Branch not found");
+
+  const token = generateKioskToken();
+  const device = await prisma.kioskDevice.create({
+    data: {
+      name,
+      branchId,
+      token,
+      tokenHash: hashKioskToken(token),
+      tokenHint: kioskTokenHint(token),
+      isActive: true,
+    },
+  });
+
+  revalidatePath("/admin/settings/kiosk-devices");
+  return { id: device.id, token };
+}
+
+export async function setKioskDeviceActive(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const isActive = formData.get("isActive") === "true";
+  await prisma.kioskDevice.update({ where: { id }, data: { isActive } });
+  revalidatePath("/admin/settings/kiosk-devices");
+}
+
+export async function regenerateKioskToken(formData: FormData) {
+  await requireAdmin();
+  const id = String(formData.get("id"));
+  const token = generateKioskToken();
+  await prisma.kioskDevice.update({
+    where: { id },
+    data: {
+      token,
+      tokenHash: hashKioskToken(token),
+      tokenHint: kioskTokenHint(token),
+    },
+  });
+  revalidatePath("/admin/settings/kiosk-devices");
 }

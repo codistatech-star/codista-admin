@@ -14,7 +14,6 @@ export function AddStockItemModal({
 }: {
   trigger?: ReactNode;
   triggerClassName?: string;
-  /** When set, edits catalogue fields only (no first-variant block). */
   item?: StockItemDTO;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -38,7 +37,7 @@ export function AddStockItemModal({
         <input
           className="admin-input mt-1"
           name="name"
-          placeholder="e.g. Dobok"
+          placeholder="e.g. Dobok - Daedo - XL"
           defaultValue={item?.name}
           required
         />
@@ -50,6 +49,16 @@ export function AddStockItemModal({
           name="sku"
           placeholder="Optional SKU"
           defaultValue={item?.sku ?? ""}
+        />
+      </label>
+      <label className="admin-label">
+        {isEdit ? "Quantity" : "Opening quantity"}
+        <input
+          className="admin-input mt-1"
+          name="quantity"
+          type="number"
+          min={0}
+          defaultValue={item?.quantity ?? 0}
         />
       </label>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -85,56 +94,6 @@ export function AddStockItemModal({
           defaultValue={item?.lowStockAt ?? 5}
         />
       </label>
-
-      {!isEdit ? (
-        <div className="space-y-3 border-t border-[var(--admin-border)] pt-3">
-          <p className="text-sm font-medium text-gray-900">First variant</p>
-          <p className="text-xs text-[var(--admin-muted)]">
-            Required so the item can be stocked and sold immediately. Leave size prices blank to use
-            the item defaults.
-          </p>
-          <label className="admin-label">
-            Variant label
-            <input
-              className="admin-input mt-1"
-              name="variantLabel"
-              placeholder="e.g. Size 160 / Standard"
-              required
-            />
-          </label>
-          <label className="admin-label">
-            Opening quantity
-            <input
-              className="admin-input mt-1"
-              name="variantQuantity"
-              type="number"
-              defaultValue={0}
-            />
-          </label>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="admin-label">
-              Variant sale (₹)
-              <input
-                className="admin-input mt-1"
-                name="variantSalePrice"
-                type="number"
-                step="0.01"
-                placeholder="Optional"
-              />
-            </label>
-            <label className="admin-label">
-              Variant cost (₹)
-              <input
-                className="admin-input mt-1"
-                name="variantCostPrice"
-                type="number"
-                step="0.01"
-                placeholder="Optional"
-              />
-            </label>
-          </div>
-        </div>
-      ) : null}
 
       <SubmitButton className="w-full">{isEdit ? "Save changes" : "Save item"}</SubmitButton>
     </AdminFormModal>

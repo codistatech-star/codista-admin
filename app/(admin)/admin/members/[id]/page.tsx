@@ -128,6 +128,7 @@ export default async function MemberDetailPage({
           beltGradeId: member.beltGradeId,
           batchIds: member.batches.map((b) => b.batchId),
           extraClassIds: member.extraClasses.map((e) => e.extraClassId),
+          rfidUid: member.rfidUid ?? "",
         }}
       />
 

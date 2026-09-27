@@ -67,11 +67,13 @@ export default async function MembersPage({
 
   const statusFilter = sp.status ?? "ACTIVE";
 
-  const filtered = members.filter((m) => {
-    if (!statusFilter) return true;
-    const s = membershipStatus(m.isActive, m.membership?.validUntil, settings.expiringSoonDays);
-    return s === statusFilter;
-  });
+  const filtered = members
+    .filter((m) => {
+      if (!statusFilter) return true;
+      const s = membershipStatus(m.isActive, m.membership?.validUntil, settings.expiringSoonDays);
+      return s === statusFilter;
+    })
+    .sort((a, b) => a.name.trim().localeCompare(b.name.trim(), "en", { sensitivity: "base" }));
 
   function badgeClass(status: string) {
     return status === "ACTIVE"
@@ -150,6 +152,9 @@ export default async function MembersPage({
                       </Link>
                       <p className="mt-0.5 font-mono text-xs text-[var(--admin-muted)]">{m.code}</p>
                       <p className="text-xs text-[var(--admin-muted)]">{m.mobile}</p>
+                      <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                        {m.rfidUid ? "Card assigned" : "No card"}
+                      </p>
                     </div>
                     <span className={badgeClass(status)}>{statusLabel(status)}</span>
                   </div>
@@ -187,6 +192,7 @@ export default async function MembersPage({
                 <th>Name</th>
                 <th>Plan</th>
                 <th>Batches</th>
+                <th>Card</th>
                 <th>Valid until</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -210,6 +216,9 @@ export default async function MembersPage({
                     </td>
                     <td>{m.classPlan.name}</td>
                     <td>{m.batches.map((b) => b.batch.name).join(", ") || "—"}</td>
+                    <td className="text-xs text-[var(--admin-muted)]">
+                      {m.rfidUid ? "Assigned" : "Not assigned"}
+                    </td>
                     <td>{formatDate(m.membership?.validUntil)}</td>
                     <td>
                       <span className={badgeClass(status)}>{statusLabel(status)}</span>
@@ -221,7 +230,7 @@ export default async function MembersPage({
                 );
               })}
               {!filtered.length ? (
-                <AdminEmptyRow colSpan={7} message="No members match these filters." />
+                <AdminEmptyRow colSpan={8} message="No members match these filters." />
               ) : null}
             </tbody>
           </table>

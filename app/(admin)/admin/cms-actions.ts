@@ -4,13 +4,6 @@ import { revalidatePath } from "next/cache";
 import { requireSession, getActiveBranchId } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 
-function optionalDecimal(value: FormDataEntryValue | null): number | null {
-  const raw = String(value ?? "").trim();
-  if (!raw) return null;
-  const n = Number(raw);
-  return Number.isFinite(n) ? n : null;
-}
-
 export async function upsertStockItem(formData: FormData) {
   await requireSession();
   const id = String(formData.get("id") || "");
@@ -18,6 +11,7 @@ export async function upsertStockItem(formData: FormData) {
     name: String(formData.get("name")),
     sku: String(formData.get("sku") || "") || null,
     description: String(formData.get("description") || "") || null,
+    quantity: Math.max(0, Number(formData.get("quantity") || 0)),
     costPrice: Number(formData.get("costPrice") || 0),
     salePrice: Number(formData.get("salePrice") || 0),
     lowStockAt: Number(formData.get("lowStockAt") || 5),
@@ -27,59 +21,8 @@ export async function upsertStockItem(formData: FormData) {
   if (id) {
     await prisma.stockItem.update({ where: { id }, data });
   } else {
-    const variantLabel = String(formData.get("variantLabel") || "").trim();
-    if (!variantLabel) throw new Error("First variant label is required");
-    const openingQty = Math.max(0, Number(formData.get("variantQuantity") || 0));
-    await prisma.stockItem.create({
-      data: {
-        ...data,
-        variants: {
-          create: {
-            label: variantLabel,
-            quantity: openingQty,
-            salePrice: optionalDecimal(formData.get("variantSalePrice")),
-            costPrice: optionalDecimal(formData.get("variantCostPrice")),
-          },
-        },
-      },
-    });
+    await prisma.stockItem.create({ data });
   }
-  revalidatePath("/admin/stock");
-}
-
-export async function addStockVariant(formData: FormData) {
-  await requireSession();
-  const itemId = String(formData.get("itemId"));
-  const label = String(formData.get("label") || "").trim();
-  if (!label) throw new Error("Variant label is required");
-
-  const existing = await prisma.stockVariant.findUnique({
-    where: { itemId_label: { itemId, label } },
-  });
-  if (existing) throw new Error(`A variant named “${label}” already exists`);
-
-  await prisma.stockVariant.create({
-    data: {
-      itemId,
-      label,
-      quantity: Math.max(0, Number(formData.get("quantity") || 0)),
-      salePrice: optionalDecimal(formData.get("salePrice")),
-      costPrice: optionalDecimal(formData.get("costPrice")),
-    },
-  });
-  revalidatePath("/admin/stock");
-}
-
-export async function deleteStockVariant(formData: FormData) {
-  await requireSession();
-  const id = String(formData.get("id"));
-  await prisma.$transaction([
-    prisma.stockMovement.updateMany({
-      where: { variantId: id },
-      data: { variantId: null },
-    }),
-    prisma.stockVariant.delete({ where: { id } }),
-  ]);
   revalidatePath("/admin/stock");
 }
 
@@ -87,7 +30,6 @@ type MovementType = "PURCHASE" | "SALE" | "ISSUE" | "DAMAGE" | "TRANSFER_IN" | "
 
 type MovementLineInput = {
   itemId: string;
-  variantId: string;
   quantity: number;
   unitPrice: number | null;
 };
@@ -96,7 +38,6 @@ type MovementLineInput = {
 export async function recordStockMovement(formData: FormData) {
   const type = String(formData.get("type")) as MovementType;
   const itemId = String(formData.get("itemId"));
-  const variantId = String(formData.get("variantId") || "");
   const quantity = Math.abs(Number(formData.get("quantity") || 0));
   const unitPrice = formData.get("unitPrice") ? Number(formData.get("unitPrice")) : null;
   const memberId = String(formData.get("memberId") || "") || null;
@@ -106,7 +47,7 @@ export async function recordStockMovement(formData: FormData) {
     type,
     memberId,
     notes,
-    lines: [{ itemId, variantId, quantity, unitPrice }],
+    lines: [{ itemId, quantity, unitPrice }],
   });
 }
 
@@ -129,7 +70,6 @@ export async function recordStockMovements(formData: FormData) {
 
   const lines: MovementLineInput[] = parsed.map((row: Record<string, unknown>) => ({
     itemId: String(row.itemId || ""),
-    variantId: String(row.variantId || ""),
     quantity: Math.abs(Number(row.quantity || 0)),
     unitPrice:
       row.unitPrice === "" || row.unitPrice === null || row.unitPrice === undefined
@@ -166,29 +106,30 @@ async function recordStockMovementsInternal({
 
   for (const line of lines) {
     if (!line.itemId) throw new Error("Item required on each line");
-    if (!line.variantId) throw new Error("Select a variant for each line");
     if (!line.quantity) throw new Error("Quantity required on each line");
   }
 
   const itemIds = [...new Set(lines.map((l) => l.itemId))];
   const items = await prisma.stockItem.findMany({
     where: { id: { in: itemIds } },
-    include: { variants: true },
   });
   const itemById = new Map(items.map((i) => [i.id, i]));
 
+  const outboundNeeded = new Map<string, number>();
   for (const line of lines) {
     const item = itemById.get(line.itemId);
     if (!item) throw new Error("Item not found");
-    const variant = item.variants.find((v) => v.id === line.variantId);
-    if (!variant) throw new Error("Invalid variant for item");
+    outboundNeeded.set(line.itemId, (outboundNeeded.get(line.itemId) ?? 0) + line.quantity);
+  }
 
-    const isOutbound =
-      type === "SALE" || type === "ISSUE" || type === "DAMAGE" || type === "TRANSFER_OUT";
-    if (isOutbound && line.quantity > variant.quantity) {
-      throw new Error(
-        `Not enough stock for ${item.name} — ${variant.label} (have ${variant.quantity})`,
-      );
+  const isOutbound =
+    type === "SALE" || type === "ISSUE" || type === "DAMAGE" || type === "TRANSFER_OUT";
+  if (isOutbound) {
+    for (const [itemId, needed] of outboundNeeded) {
+      const item = itemById.get(itemId)!;
+      if (needed > item.quantity) {
+        throw new Error(`Not enough stock for ${item.name} (have ${item.quantity})`);
+      }
     }
   }
 
@@ -209,25 +150,22 @@ async function recordStockMovementsInternal({
 
     for (const line of lines) {
       const item = itemById.get(line.itemId)!;
-      const variant = item.variants.find((v) => v.id === line.variantId)!;
-      await tx.stockVariant.update({
-        where: { id: line.variantId },
+      await tx.stockItem.update({
+        where: { id: line.itemId },
         data: { quantity: { increment: deltaSign * line.quantity } },
       });
 
-      const unitCost = Number(variant.costPrice ?? item.costPrice);
+      const unitCost = Number(item.costPrice);
 
       const movement = await tx.stockMovement.create({
         data: {
           itemId: line.itemId,
-          variantId: line.variantId,
           branchId,
           type,
           quantity: line.quantity,
           unitPrice: line.unitPrice,
           unitCost,
           itemName: item.name,
-          variantLabel: variant.label,
           memberId,
           createdById: user.id,
           notes,

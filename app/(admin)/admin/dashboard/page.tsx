@@ -67,12 +67,9 @@ export default async function DashboardPage() {
 
   const lowStock = await prisma.stockItem.findMany({
     where: { isActive: true },
-    include: { variants: true },
+    select: { quantity: true, lowStockAt: true },
   });
-  const lowCount = lowStock.filter((item) => {
-    const qty = item.variants.reduce((n, v) => n + v.quantity, 0);
-    return qty <= item.lowStockAt;
-  }).length;
+  const lowCount = lowStock.filter((item) => item.quantity <= item.lowStockAt).length;
 
   const cards = [
     { label: "Active members", value: String(active), href: "/admin/members?status=ACTIVE" },

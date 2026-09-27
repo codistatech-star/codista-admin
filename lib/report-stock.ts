@@ -4,7 +4,6 @@ export type StockSaleLine = {
   id: string;
   createdAt: Date;
   itemName: string;
-  variantLabel: string | null;
   memberName: string | null;
   memberCode: string | null;
   quantity: number;
@@ -40,23 +39,17 @@ export function buildStockSalesReport(
     unitPrice: Decimalish;
     unitCost: Decimalish;
     itemName: string | null;
-    variantLabel: string | null;
     item: {
       name: string;
       salePrice: Decimalish;
       costPrice: Decimalish;
     };
-    variant: {
-      label: string;
-      salePrice: Decimalish;
-      costPrice: Decimalish;
-    } | null;
     member: { name: string; code: string } | null;
   }[],
 ): StockSalesReport {
   const lines: StockSaleLine[] = movements.map((m) => {
-    const catalogueSale = toNum(m.variant?.salePrice ?? m.item.salePrice);
-    const catalogueCost = toNum(m.variant?.costPrice ?? m.item.costPrice);
+    const catalogueSale = toNum(m.item.salePrice);
+    const catalogueCost = toNum(m.item.costPrice);
     const unitSale = m.unitPrice != null ? toNum(m.unitPrice) : catalogueSale;
     const unitCost = m.unitCost != null ? toNum(m.unitCost) : catalogueCost;
     const qty = m.quantity;
@@ -66,7 +59,6 @@ export function buildStockSalesReport(
       id: m.id,
       createdAt: m.createdAt,
       itemName: m.itemName ?? m.item.name,
-      variantLabel: m.variantLabel ?? m.variant?.label ?? null,
       memberName: m.member?.name ?? null,
       memberCode: m.member?.code ?? null,
       quantity: qty,
@@ -106,9 +98,7 @@ export async function getStockSalesReport(input: {
       unitPrice: true,
       unitCost: true,
       itemName: true,
-      variantLabel: true,
       item: { select: { name: true, salePrice: true, costPrice: true } },
-      variant: { select: { label: true, salePrice: true, costPrice: true } },
       member: { select: { name: true, code: true } },
     },
     orderBy: { createdAt: "desc" },

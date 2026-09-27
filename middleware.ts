@@ -21,10 +21,15 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const admin = isAdminHost(host);
 
+  const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1");
+
   if (!admin && pathname.startsWith("/admin")) {
-    // Allow /admin on localhost for local development
-    const isLocal =
-      host.startsWith("localhost") || host.startsWith("127.0.0.1");
+    if (!isLocal) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
+
+  if (!admin && (pathname === "/kiosk" || pathname.startsWith("/kiosk/"))) {
     if (!isLocal) {
       return NextResponse.redirect(new URL("/", req.url));
     }
