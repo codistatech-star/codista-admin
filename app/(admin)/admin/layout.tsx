@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Role } from "@prisma/client";
 import { AdminAppShell } from "@/components/admin/AdminAppShell";
 import { Providers } from "@/components/Providers";
+import { purgeOldAttendancePunches } from "@/lib/attendance";
 import { getActiveBranchId, getSessionUser, listAccessibleBranches } from "@/lib/auth-helpers";
 
 export const metadata: Metadata = {
@@ -48,6 +49,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const [branches, activeBranchId] = await Promise.all([
     listAccessibleBranches(user),
     getActiveBranchId(user),
+    purgeOldAttendancePunches().catch(() => undefined),
   ]);
 
   return (

@@ -1,11 +1,13 @@
 import type { AttendancePunchStatus, AttendanceSource, KioskDevice } from "@prisma/client";
 import { revalidatePath } from "next/cache";
-import { hashKioskToken } from "@/lib/kiosk-token";
+import { hashKioskPin } from "@/lib/kiosk-token";
 import { getAcademySettings } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import { normalizeRfidUid } from "@/lib/rfid";
 
-const DUPLICATE_WINDOW_MS = 5_000;
+const DUPLICATE_WINDOW_MS = 3_000;
+const PUNCH_RETENTION_DAYS = 3;
+const PURGE_THROTTLE_MS = 60 * 60 * 1000;
 
 export type MarkAttendanceInput = {
   memberId: string;
@@ -36,7 +38,8 @@ const PUNCH_MESSAGES: Record<AttendancePunchStatus, string> = {
   UNKNOWN_CARD: "Unknown card",
   INACTIVE: "Member inactive",
   EXPIRED: "Membership expired",
-  NO_BATCH: "No batch assigned",
+  NO_BATCH: "Member not mapped to any batch",
+  OUTSIDE_WINDOW: "Outside class time",
 };
 
 /** Calendar date in IST as a UTC midnight Date (matches Prisma @db.Date usage). */
@@ -48,6 +51,95 @@ export function todayInIst(now = new Date()) {
     day: "2-digit",
   }).format(now);
   return new Date(`${parts}T00:00:00.000Z`);
+}
+
+/** "YYYY-MM-DD" for IST today (date pickers). */
+export function todayIstYmd(now = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+/** Minutes since midnight in IST. */
+export function minutesNowIst(now = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  return hour * 60 + minute;
+}
+
+/** Parse "HH:mm" to minutes since midnight, or null. */
+export function parseHhMm(value: string | null | undefined) {
+  if (!value) return null;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value.trim());
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}
+
+export function formatBatchWindow(startTime?: string | null, endTime?: string | null) {
+  if (!startTime || !endTime) return null;
+  return `${startTime}–${endTime} IST`;
+}
+
+export function isWithinBatchWindow(
+  startTime: string | null | undefined,
+  endTime: string | null | undefined,
+  now = new Date(),
+) {
+  const start = parseHhMm(startTime);
+  const end = parseHhMm(endTime);
+  if (start == null || end == null || start >= end) return false;
+  const mins = minutesNowIst(now);
+  return mins >= start && mins <= end;
+}
+
+export type MappedBatchForPunch = {
+  batchId: string;
+  isPrimary: boolean;
+  batch: {
+    id: string;
+    name: string;
+    isActive: boolean;
+    startTime: string | null;
+    endTime: string | null;
+  };
+};
+
+export type ResolveBatchResult =
+  | { kind: "ok"; batchId: string }
+  | { kind: "NO_BATCH" }
+  | { kind: "OUTSIDE_WINDOW" };
+
+export function resolveBatchForPunch(
+  batches: MappedBatchForPunch[],
+  now = new Date(),
+): ResolveBatchResult {
+  const active = batches.filter((b) => b.batch.isActive);
+  if (!active.length) return { kind: "NO_BATCH" };
+
+  const inWindow = active.filter((b) =>
+    isWithinBatchWindow(b.batch.startTime, b.batch.endTime, now),
+  );
+  if (!inWindow.length) return { kind: "OUTSIDE_WINDOW" };
+
+  inWindow.sort((a, b) => {
+    if (a.isPrimary !== b.isPrimary) return a.isPrimary ? -1 : 1;
+    const as = parseHhMm(a.batch.startTime) ?? 0;
+    const bs = parseHhMm(b.batch.startTime) ?? 0;
+    return as - bs;
+  });
+  return { kind: "ok", batchId: inWindow[0].batchId };
 }
 
 export async function assertMemberCanBeMarked(
@@ -101,12 +193,6 @@ export async function markMemberPresent(
   input: Omit<MarkAttendanceInput, "isPresent">,
 ) {
   return upsertAttendanceMark({ ...input, isPresent: true });
-}
-
-function resolvePrimaryBatchId(
-  batches: { batchId: string; isPrimary: boolean }[],
-) {
-  return batches.find((b) => b.isPrimary)?.batchId ?? batches[0]?.batchId ?? null;
 }
 
 function memberPayload(member: {
@@ -189,7 +275,22 @@ export async function recordKioskPunch(input: {
 
   const member = await prisma.member.findFirst({
     where: { rfidUid, branchId: input.device.branchId },
-    include: { membership: true, batches: true },
+    include: {
+      membership: true,
+      batches: {
+        include: {
+          batch: {
+            select: {
+              id: true,
+              name: true,
+              isActive: true,
+              startTime: true,
+              endTime: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   if (!member) {
@@ -234,8 +335,8 @@ export async function recordKioskPunch(input: {
     return { status: "EXPIRED", message: PUNCH_MESSAGES.EXPIRED, member: shown };
   }
 
-  const batchId = resolvePrimaryBatchId(member.batches);
-  if (!batchId) {
+  const resolved = resolveBatchForPunch(member.batches, now);
+  if (resolved.kind === "NO_BATCH") {
     await writePunch({
       deviceId: input.device.id,
       branchId: input.device.branchId,
@@ -246,6 +347,23 @@ export async function recordKioskPunch(input: {
     });
     return { status: "NO_BATCH", message: PUNCH_MESSAGES.NO_BATCH, member: shown };
   }
+  if (resolved.kind === "OUTSIDE_WINDOW") {
+    await writePunch({
+      deviceId: input.device.id,
+      branchId: input.device.branchId,
+      rfidUid,
+      status: "OUTSIDE_WINDOW",
+      date,
+      memberId: member.id,
+    });
+    return {
+      status: "OUTSIDE_WINDOW",
+      message: PUNCH_MESSAGES.OUTSIDE_WINDOW,
+      member: shown,
+    };
+  }
+
+  const batchId = resolved.batchId;
 
   const session = await prisma.attendanceSession.findUnique({
     where: {
@@ -296,8 +414,29 @@ export async function recordKioskPunch(input: {
   return { status: "PRESENT", message: PUNCH_MESSAGES.PRESENT, member: shown };
 }
 
-export async function findKioskDeviceByToken(token: string) {
+export async function findKioskDeviceByPin(pin: string) {
   return prisma.kioskDevice.findUnique({
-    where: { tokenHash: hashKioskToken(token) },
+    where: { tokenHash: hashKioskPin(pin) },
+  });
+}
+
+/** @deprecated use findKioskDeviceByPin */
+export async function findKioskDeviceByToken(token: string) {
+  return findKioskDeviceByPin(token);
+}
+
+/** Delete punches older than retention; throttled via AcademySettings.punchesPurgedAt. */
+export async function purgeOldAttendancePunches() {
+  const settings = await prisma.academySettings.findUnique({ where: { id: "default" } });
+  const last = settings?.punchesPurgedAt?.getTime() ?? 0;
+  if (Date.now() - last < PURGE_THROTTLE_MS) return;
+
+  const cutoff = new Date(Date.now() - PUNCH_RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  await prisma.attendancePunch.deleteMany({
+    where: { punchedAt: { lt: cutoff } },
+  });
+  await prisma.academySettings.update({
+    where: { id: "default" },
+    data: { punchesPurgedAt: new Date() },
   });
 }

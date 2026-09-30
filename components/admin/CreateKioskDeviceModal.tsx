@@ -13,18 +13,18 @@ export function CreateKioskDeviceModal({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [pin, setPin] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
   function reset() {
     setError(null);
-    setToken(null);
+    setPin(null);
     setCopied(false);
   }
 
   return (
     <AdminModal
-      title={token ? "Copy device token" : "Add kiosk device"}
+      title={pin ? "Copy device PIN" : "Add kiosk device"}
       trigger="Add device"
       open={open}
       onOpenChange={(next) => {
@@ -35,24 +35,24 @@ export function CreateKioskDeviceModal({
         }
       }}
     >
-      {token ? (
+      {pin ? (
         <div className="space-y-3 text-sm">
           <p className="text-gray-700">
-            Copy this token into <code>/kiosk</code> or into the Windows agent config
-            (<code>%ProgramData%\Codista\rfid-agent\appsettings.json</code>). You can also copy it later from the list.
+            Enter this 4-digit PIN on <code>/kiosk</code> or in the Windows agent config. You can
+            also copy it later from the list.
           </p>
-          <p className="break-all rounded-xl border border-[var(--admin-border)] bg-slate-50 px-3 py-2 font-mono text-xs">
-            {token}
+          <p className="rounded-xl border border-[var(--admin-border)] bg-slate-50 px-3 py-3 text-center font-mono text-2xl tracking-[0.35em]">
+            {pin}
           </p>
           <button
             type="button"
             className="btn-secondary w-full"
             onClick={async () => {
-              await navigator.clipboard.writeText(token);
+              await navigator.clipboard.writeText(pin);
               setCopied(true);
             }}
           >
-            {copied ? "Copied" : "Copy token"}
+            {copied ? "Copied" : "Copy PIN"}
           </button>
           <button
             type="button"
@@ -73,7 +73,7 @@ export function CreateKioskDeviceModal({
             setError(null);
             try {
               const created = await createKioskDevice(fd);
-              setToken(created.token);
+              setPin(created.pin);
             } catch (err) {
               setError(err instanceof Error ? err.message : "Failed to create device");
             }
@@ -91,6 +91,17 @@ export function CreateKioskDeviceModal({
               required
               placeholder="Select branch"
               options={branches.map((b) => ({ value: b.id, label: b.name }))}
+            />
+          </label>
+          <label className="admin-label">
+            PIN (optional)
+            <input
+              className="admin-input mt-1 font-mono tracking-widest"
+              name="pin"
+              inputMode="numeric"
+              pattern="\d{4}"
+              maxLength={4}
+              placeholder="Auto-generate if blank"
             />
           </label>
           {error ? <p className="text-sm text-[var(--admin-red)]">{error}</p> : null}

@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const TOKEN_KEY = "codista-kiosk-token";
+const PIN_KEY = "codista-kiosk-pin";
+const LEGACY_TOKEN_KEY = "codista-kiosk-token";
 const RESET_MS = 2500;
 
 type PunchStatus =
@@ -12,7 +13,8 @@ type PunchStatus =
   | "UNKNOWN_CARD"
   | "INACTIVE"
   | "EXPIRED"
-  | "NO_BATCH";
+  | "NO_BATCH"
+  | "OUTSIDE_WINDOW";
 
 type PunchResult = {
   status: PunchStatus | string;
@@ -27,7 +29,7 @@ function statusTone(status: string) {
 }
 
 export function KioskScan() {
-  const [token, setToken] = useState<string | null>(null);
+  const [pin, setPin] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [pairValue, setPairValue] = useState("");
   const [pairError, setPairError] = useState<string | null>(null);
@@ -38,7 +40,9 @@ export function KioskScan() {
   const resetTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    setToken(window.localStorage.getItem(TOKEN_KEY));
+    window.localStorage.removeItem(LEGACY_TOKEN_KEY);
+    const stored = window.localStorage.getItem(PIN_KEY);
+    if (stored && /^\d{4}$/.test(stored)) setPin(stored);
     setReady(true);
   }, []);
 
@@ -66,7 +70,7 @@ export function KioskScan() {
   }, []);
 
   useEffect(() => {
-    if (!token) return;
+    if (!pin) return;
     focusInput();
     function onVis() {
       if (document.visibilityState === "visible") focusInput();
@@ -77,37 +81,38 @@ export function KioskScan() {
       window.removeEventListener("focus", focusInput);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [token, focusInput]);
+  }, [pin, focusInput]);
 
   function pairDevice(e: React.FormEvent) {
     e.preventDefault();
     const next = pairValue.trim();
-    if (!next) {
-      setPairError("Enter the device token from Settings → Kiosk devices.");
+    if (!/^\d{4}$/.test(next)) {
+      setPairError("Enter the 4-digit PIN from Settings → Kiosk devices.");
       return;
     }
-    window.localStorage.setItem(TOKEN_KEY, next);
-    setToken(next);
+    window.localStorage.setItem(PIN_KEY, next);
+    setPin(next);
     setPairError(null);
     setPairValue("");
   }
 
   function forgetDevice() {
-    window.localStorage.removeItem(TOKEN_KEY);
-    setToken(null);
+    window.localStorage.removeItem(PIN_KEY);
+    window.localStorage.removeItem(LEGACY_TOKEN_KEY);
+    setPin(null);
     setResult(null);
   }
 
   async function submitUid(raw: string) {
     const uid = raw.trim();
-    if (!uid || !token || busy) return;
+    if (!uid || !pin || busy) return;
     setBusy(true);
     try {
       const res = await fetch("/api/kiosk/punch", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${pin}`,
         },
         body: JSON.stringify({ uid }),
       });
@@ -141,23 +146,25 @@ export function KioskScan() {
     return <div className="flex min-h-dvh items-center justify-center text-white/70">Loading…</div>;
   }
 
-  if (!token) {
+  if (!pin) {
     return (
       <div className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 text-white">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">CODISTA</p>
         <h1 className="mt-2 text-3xl font-semibold">Pair this kiosk</h1>
         <p className="mt-2 text-sm text-white/70">
-          Paste the device token shown once when the kiosk was created in Settings.
+          Enter the 4-digit device PIN from Settings → Kiosk devices.
         </p>
         <form onSubmit={pairDevice} className="mt-6 space-y-3">
           <input
-            className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-3 text-white outline-none placeholder:text-white/40 focus:ring-2 focus:ring-white/40"
+            className="w-full rounded-xl border border-white/20 bg-white/10 px-3 py-3 text-center font-mono text-2xl tracking-[0.35em] text-white outline-none placeholder:text-white/40 focus:ring-2 focus:ring-white/40"
             value={pairValue}
-            onChange={(e) => setPairValue(e.target.value)}
-            placeholder="Device token"
+            onChange={(e) => setPairValue(e.target.value.replace(/\D/g, "").slice(0, 4))}
+            placeholder="••••"
+            inputMode="numeric"
             autoFocus
             autoComplete="off"
             spellCheck={false}
+            maxLength={4}
           />
           {pairError ? <p className="text-sm text-red-200">{pairError}</p> : null}
           <button type="submit" className="w-full rounded-xl bg-[var(--admin-red,#e31c23)] px-4 py-3 font-semibold">
@@ -216,7 +223,7 @@ export function KioskScan() {
         ) : (
           <>
             <p className="text-4xl font-semibold tracking-tight md:text-5xl">Please tap your card</p>
-            <p className="mt-3 text-white/65">Attendance is for today. No other action needed.</p>
+            <p className="mt-3 text-white/65">Attendance is for today&apos;s class window. No other action needed.</p>
           </>
         )}
       </div>

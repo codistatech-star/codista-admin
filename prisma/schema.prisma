@@ -61,6 +61,7 @@ enum AttendancePunchStatus {
   INACTIVE
   EXPIRED
   NO_BATCH
+  OUTSIDE_WINDOW
 }
 
 model User {
@@ -131,6 +132,8 @@ model Batch {
   id        String        @id @default(cuid())
   name      String
   branchId  String?
+  startTime String?       // "HH:mm" IST wall clock
+  endTime   String?       // "HH:mm" IST wall clock (same day, start < end)
   sortOrder Int           @default(0)
   isActive  Boolean       @default(true)
   branch    Branch?       @relation(fields: [branchId], references: [id])
@@ -166,6 +169,7 @@ model AcademySettings {
   allowAttendanceWhenExpired Boolean @default(true)
   lateFineAmount           Decimal  @default(0) @db.Decimal(10, 2)
   receiptPrefix            String   @default("COD")
+  punchesPurgedAt          DateTime?
   updatedAt                DateTime @updatedAt
 }
 
@@ -298,7 +302,7 @@ model KioskDevice {
   id         String            @id @default(cuid())
   name       String
   branchId   String
-  token      String?
+  pin        String?
   tokenHash  String            @unique
   tokenHint  String
   isActive   Boolean           @default(true)

@@ -1,8 +1,18 @@
+export type AttendanceBatchStat = {
+  batchId: string;
+  name: string;
+  present: number;
+  sessionsHeld: number;
+  pct: number | null;
+};
+
 export type AttendanceMemberStat = {
   memberId: string;
   name: string;
   code: string;
+  /** Batch names (for search / legacy); prefer `byBatch` for display. */
   batches: string[];
+  byBatch: AttendanceBatchStat[];
   present: number;
   sessionsHeld: number;
   pct: number | null;
@@ -53,6 +63,13 @@ function pct(present: number, held: number): number | null {
   return Math.round((present / held) * 100);
 }
 
+function countPresent(sessions: SessionInput[], memberId: string) {
+  return sessions.reduce((n, s) => {
+    const entry = s.entries.find((e) => e.memberId === memberId);
+    return n + (entry?.isPresent ? 1 : 0);
+  }, 0);
+}
+
 export function buildAttendanceReport(input: {
   members: MemberInput[];
   sessionsThisMonth: SessionInput[];
@@ -79,34 +96,37 @@ export function buildAttendanceReport(input: {
 
   const members = input.members
     .map((m) => {
-      const memberBatchIds = m.batches.map((b) => b.batchId);
-      if (batchFilter && !memberBatchIds.includes(batchFilter)) return null;
+      const memberBatches = m.batches.filter((b) =>
+        batchFilter ? b.batchId === batchFilter : true,
+      );
+      if (!memberBatches.length) return null;
 
-      const batchNames = m.batches
-        .filter((b) => (batchFilter ? b.batchId === batchFilter : true))
-        .map((b) => b.batch.name);
+      const memberBatchIds = new Set(memberBatches.map((b) => b.batchId));
 
-      const heldThis = input.sessionsThisMonth.filter((s) => {
-        if (!memberBatchIds.includes(s.batchId)) return false;
-        if (batchFilter && s.batchId !== batchFilter) return false;
-        return true;
-      });
-      const heldLast = input.sessionsLastMonth.filter((s) => {
-        if (!memberBatchIds.includes(s.batchId)) return false;
-        if (batchFilter && s.batchId !== batchFilter) return false;
-        return true;
-      });
+      const byBatch: AttendanceBatchStat[] = memberBatches
+        .map((b) => {
+          const held = input.sessionsThisMonth.filter((s) => s.batchId === b.batchId);
+          const present = countPresent(held, m.id);
+          return {
+            batchId: b.batchId,
+            name: b.batch.name,
+            present,
+            sessionsHeld: held.length,
+            pct: pct(present, held.length),
+          };
+        })
+        .sort((a, b) => {
+          const ap = a.pct ?? -1;
+          const bp = b.pct ?? -1;
+          if (ap !== bp) return ap - bp;
+          return a.name.localeCompare(b.name);
+        });
 
-      const present = heldThis.reduce((n, s) => {
-        const entry = s.entries.find((e) => e.memberId === m.id);
-        return n + (entry?.isPresent ? 1 : 0);
-      }, 0);
+      const heldThis = input.sessionsThisMonth.filter((s) => memberBatchIds.has(s.batchId));
+      const heldLast = input.sessionsLastMonth.filter((s) => memberBatchIds.has(s.batchId));
 
-      const lastPresent = heldLast.reduce((n, s) => {
-        const entry = s.entries.find((e) => e.memberId === m.id);
-        return n + (entry?.isPresent ? 1 : 0);
-      }, 0);
-
+      const present = countPresent(heldThis, m.id);
+      const lastPresent = countPresent(heldLast, m.id);
       const sessionsHeld = heldThis.length;
       const lastSessionsHeld = heldLast.length;
       const thisPct = pct(present, sessionsHeld);
@@ -118,7 +138,8 @@ export function buildAttendanceReport(input: {
         memberId: m.id,
         name: m.name,
         code: m.code,
-        batches: batchNames,
+        batches: byBatch.map((b) => b.name),
+        byBatch,
         present,
         sessionsHeld,
         pct: thisPct,

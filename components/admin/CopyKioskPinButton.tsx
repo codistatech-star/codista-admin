@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-export function CopyKioskTokenButton({ token }: { token: string | null }) {
+export function CopyKioskPinButton({ pin }: { pin: string | null }) {
   const [copied, setCopied] = useState(false);
 
-  if (!token) {
+  if (!pin) {
     return <span className="text-xs text-[var(--admin-muted)]">—</span>;
   }
 
@@ -13,15 +13,15 @@ export function CopyKioskTokenButton({ token }: { token: string | null }) {
     <div className="flex min-w-0 items-center gap-2">
       <input
         readOnly
-        value={token}
-        className="admin-input min-w-0 flex-1 font-mono text-xs"
+        value={pin}
+        className="admin-input min-w-0 flex-1 font-mono text-xs tracking-widest"
         onFocus={(e) => e.currentTarget.select()}
       />
       <button
         type="button"
         className="btn-secondary shrink-0 !px-3 !py-1.5 text-xs"
         onClick={async () => {
-          await navigator.clipboard.writeText(token);
+          await navigator.clipboard.writeText(pin);
           setCopied(true);
           window.setTimeout(() => setCopied(false), 1500);
         }}

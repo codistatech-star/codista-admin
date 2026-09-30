@@ -11,6 +11,12 @@ import {
   AdminListCard,
 } from "@/components/admin/ui";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
+import {
+  formatBatchWindow,
+  isWithinBatchWindow,
+  todayInIst,
+  todayIstYmd,
+} from "@/lib/attendance";
 import { getAcademySettings, membershipStatus } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import { markAttendance } from "../actions";
@@ -33,14 +39,26 @@ export default async function AttendancePage({
   }
   const settings = await getAcademySettings();
 
-  const dateStr = sp.date ?? new Date().toISOString().slice(0, 10);
-  const date = new Date(dateStr);
+  const dateStr = sp.date ?? todayIstYmd();
+  const date = new Date(`${dateStr}T00:00:00.000Z`);
+  const todayYmd = todayIstYmd();
+  const isToday = dateStr === todayYmd;
 
   const batches = await prisma.batch.findMany({
     where: { isActive: true, OR: [{ branchId }, { branchId: null }] },
     orderBy: { name: "asc" },
   });
   const batchId = sp.batchId ?? batches[0]?.id ?? "";
+  const selectedBatch = batches.find((b) => b.id === batchId) ?? null;
+  const windowLabel = selectedBatch
+    ? formatBatchWindow(selectedBatch.startTime, selectedBatch.endTime)
+    : null;
+  const outsideWindowHint =
+    isToday &&
+    selectedBatch &&
+    selectedBatch.startTime &&
+    selectedBatch.endTime &&
+    !isWithinBatchWindow(selectedBatch.startTime, selectedBatch.endTime);
 
   const users = await prisma.user.findMany({
     where: { isActive: true },
@@ -136,7 +154,7 @@ export default async function AttendancePage({
       <PageHeader
         className="!mb-3"
         title="Attendance"
-        description="Mark by date and batch. Roster = members mapped to that batch."
+        description="Mark by date and batch. Kiosk punches use each batch's start/end window; manual marks work anytime."
       />
 
       <AdminStickyDock>
@@ -152,11 +170,28 @@ export default async function AttendancePage({
                 className="mt-1 w-full md:min-w-[12rem] md:max-w-xs"
                 name="batchId"
                 defaultValue={batchId}
-                options={batches.map((b) => ({ value: b.id, label: b.name }))}
+                options={batches.map((b) => ({
+                  value: b.id,
+                  label: formatBatchWindow(b.startTime, b.endTime)
+                    ? `${b.name} (${formatBatchWindow(b.startTime, b.endTime)})`
+                    : b.name,
+                }))}
               />
             </label>
             <SubmitButton className="self-end">Load roster</SubmitButton>
           </form>
+          {windowLabel ? (
+            <p className="mt-3 text-xs text-[var(--admin-muted)]">
+              Selected window: <span className="font-medium text-gray-700">{windowLabel}</span>
+              {outsideWindowHint
+                ? " — current IST time is outside this window (kiosk would reject; manual mark still allowed)."
+                : null}
+            </p>
+          ) : selectedBatch ? (
+            <p className="mt-3 text-xs text-[var(--admin-muted)]">
+              No start/end time on this batch — set times in Settings → Batches for kiosk matching.
+            </p>
+          ) : null}
         </AdminCard>
       </AdminStickyDock>
 
@@ -216,7 +251,8 @@ export default async function AttendancePage({
           />
           {sessionId ? (
             <p className="border border-[var(--admin-border)] bg-white px-4 py-2 text-xs text-[var(--admin-muted)]">
-              Session saved. Taken by defaults to you. Users available: {users.length}.
+              Session saved. Taken by defaults to you. Users available: {users.length}. Today IST:{" "}
+              {todayInIst().toISOString().slice(0, 10)}.
             </p>
           ) : null}
         </>

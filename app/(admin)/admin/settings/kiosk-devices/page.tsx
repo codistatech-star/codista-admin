@@ -6,9 +6,9 @@ import {
   AdminListCard,
   SubmitButton,
 } from "@/components/admin/ui";
-import { CopyKioskTokenButton } from "@/components/admin/CopyKioskTokenButton";
+import { CopyKioskPinButton } from "@/components/admin/CopyKioskPinButton";
 import { CreateKioskDeviceModal } from "@/components/admin/CreateKioskDeviceModal";
-import { regenerateKioskToken, setKioskDeviceActive } from "../../actions";
+import { regenerateKioskPin, setKioskDeviceActive } from "../../actions";
 import { requireSession } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 
@@ -40,6 +40,8 @@ function punchLabel(status: string) {
       return "Expired";
     case "NO_BATCH":
       return "No batch";
+    case "OUTSIDE_WINDOW":
+      return "Outside class time";
     default:
       return status;
   }
@@ -65,7 +67,7 @@ export default async function KioskDevicesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Kiosk devices"
-        description="Create a device token and use it either in /kiosk or in the Windows RFID agent (%ProgramData%\\Codista\\rfid-agent). Chrome backup: chrome --kiosk https://admin.codista.in/kiosk"
+        description="Create a 4-digit device PIN and use it on /kiosk or in the Windows RFID agent. Punches older than 3 days are cleared automatically. Chrome: chrome --kiosk https://admin.codista.in/kiosk"
         actions={
           <div className="flex flex-wrap gap-2">
             <a href="/kiosk" target="_blank" rel="noreferrer" className="btn-secondary">
@@ -82,28 +84,38 @@ export default async function KioskDevicesPage() {
             devices.map((d) => (
               <AdminListCard key={d.id} className={!d.isActive ? "opacity-60" : undefined}>
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="font-medium text-gray-900">{d.name}</p>
                     <p className="mt-0.5 text-sm text-[var(--admin-muted)]">{d.branch.name}</p>
                     <div className="mt-2">
-                      {d.token ? (
-                        <CopyKioskTokenButton token={d.token} />
+                      {d.pin ? (
+                        <CopyKioskPinButton pin={d.pin} />
                       ) : (
-                        <form action={regenerateKioskToken}>
+                        <form action={regenerateKioskPin}>
                           <input type="hidden" name="id" value={d.id} />
                           <SubmitButton variant="secondary" pendingLabel="Creating…">
-                            Create copyable token
+                            Create PIN
                           </SubmitButton>
                         </form>
                       )}
                     </div>
-                    <p className="text-xs text-[var(--admin-muted)]">Last seen {formatWhen(d.lastSeenAt)}</p>
+                    <p className="mt-1 text-xs text-[var(--admin-muted)]">
+                      Last seen {formatWhen(d.lastSeenAt)}
+                    </p>
                   </div>
                   <span className={d.isActive ? "badge-active" : "badge-inactive"}>
                     {d.isActive ? "Active" : "Revoked"}
                   </span>
                 </div>
-                <div className="mt-3 flex justify-end border-t border-[var(--admin-border)] pt-3">
+                <div className="mt-3 flex flex-wrap justify-end gap-3 border-t border-[var(--admin-border)] pt-3">
+                  {d.pin ? (
+                    <form action={regenerateKioskPin}>
+                      <input type="hidden" name="id" value={d.id} />
+                      <SubmitButton variant="secondary" pendingLabel="Updating…">
+                        New PIN
+                      </SubmitButton>
+                    </form>
+                  ) : null}
                   <form action={setKioskDeviceActive}>
                     <input type="hidden" name="id" value={d.id} />
                     <input type="hidden" name="isActive" value={d.isActive ? "false" : "true"} />
@@ -126,7 +138,7 @@ export default async function KioskDevicesPage() {
               <tr>
                 <th>Name</th>
                 <th>Branch</th>
-                <th>Token</th>
+                <th>PIN</th>
                 <th>Last seen</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -137,14 +149,14 @@ export default async function KioskDevicesPage() {
                 <tr key={d.id} className={!d.isActive ? "opacity-60" : undefined}>
                   <td className="font-medium text-gray-900">{d.name}</td>
                   <td>{d.branch.name}</td>
-                  <td className="min-w-[16rem]">
-                    {d.token ? (
-                      <CopyKioskTokenButton token={d.token} />
+                  <td className="min-w-[10rem]">
+                    {d.pin ? (
+                      <CopyKioskPinButton pin={d.pin} />
                     ) : (
-                      <form action={regenerateKioskToken}>
+                      <form action={regenerateKioskPin}>
                         <input type="hidden" name="id" value={d.id} />
                         <SubmitButton variant="secondary" pendingLabel="Creating…">
-                          Create copyable token
+                          Create PIN
                         </SubmitButton>
                       </form>
                     )}
@@ -156,13 +168,23 @@ export default async function KioskDevicesPage() {
                     </span>
                   </td>
                   <td>
-                    <form action={setKioskDeviceActive}>
-                      <input type="hidden" name="id" value={d.id} />
-                      <input type="hidden" name="isActive" value={d.isActive ? "false" : "true"} />
-                      <SubmitButton variant="danger" pendingLabel="Updating…">
-                        {d.isActive ? "Revoke" : "Reactivate"}
-                      </SubmitButton>
-                    </form>
+                    <div className="flex flex-wrap gap-2">
+                      {d.pin ? (
+                        <form action={regenerateKioskPin}>
+                          <input type="hidden" name="id" value={d.id} />
+                          <SubmitButton variant="secondary" pendingLabel="Updating…">
+                            New PIN
+                          </SubmitButton>
+                        </form>
+                      ) : null}
+                      <form action={setKioskDeviceActive}>
+                        <input type="hidden" name="id" value={d.id} />
+                        <input type="hidden" name="isActive" value={d.isActive ? "false" : "true"} />
+                        <SubmitButton variant="danger" pendingLabel="Updating…">
+                          {d.isActive ? "Revoke" : "Reactivate"}
+                        </SubmitButton>
+                      </form>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -172,7 +194,7 @@ export default async function KioskDevicesPage() {
         }
       />
 
-      <AdminCard title="Recent punches">
+      <AdminCard title="Recent punches (last 3 days)">
         <AdminResponsiveList
           tableWrapClassName="border-0"
           cards={

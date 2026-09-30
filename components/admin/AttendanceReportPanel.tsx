@@ -86,7 +86,7 @@ export function AttendanceReportPanel({
 
   const description =
     tab === "members"
-      ? "Sorted by lowest attendance first. Unmarked = absent."
+      ? "Per-batch bars show each mapped class. Sorted by lowest overall % first. Unmarked = absent."
       : "Sessions taken this month";
 
   const selectTab = useCallback((next: AttendanceReportTab) => {

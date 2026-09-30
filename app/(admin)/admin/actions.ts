@@ -6,7 +6,12 @@ import { Role } from "@prisma/client";
 import { requireAdmin, requireSession, getActiveBranchId, canAccessBranch } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
 import { upsertAttendanceMark } from "@/lib/attendance";
-import { generateKioskToken, hashKioskToken, kioskTokenHint } from "@/lib/kiosk-token";
+import {
+  generateKioskPin,
+  hashKioskPin,
+  isValidKioskPin,
+  kioskPinHint,
+} from "@/lib/kiosk-token";
 import { computePaymentQuote, nextMemberCode, nextReceiptNo } from "@/lib/membership";
 import { normalizeRfidUid } from "@/lib/rfid";
 
@@ -67,15 +72,32 @@ export async function upsertBatch(formData: FormData) {
   const user = await requireSession();
   const branchId = (await getActiveBranchId(user))!;
   const id = String(formData.get("id") || "");
+  const startTime = String(formData.get("startTime") || "").trim();
+  const endTime = String(formData.get("endTime") || "").trim();
+  if (!/^\d{1,2}:\d{2}$/.test(startTime) || !/^\d{1,2}:\d{2}$/.test(endTime)) {
+    throw new Error("Start and end time are required (HH:mm)");
+  }
+  const [sh, sm] = startTime.split(":").map(Number);
+  const [eh, em] = endTime.split(":").map(Number);
+  const startMins = sh * 60 + sm;
+  const endMins = eh * 60 + em;
+  if (startMins >= endMins) throw new Error("End time must be after start time");
+
+  const normStart = `${String(sh).padStart(2, "0")}:${String(sm).padStart(2, "0")}`;
+  const normEnd = `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
+
   const data = {
     name: String(formData.get("name")),
     branchId,
+    startTime: normStart,
+    endTime: normEnd,
     sortOrder: Number(formData.get("sortOrder") || 0),
     isActive: true,
   };
   if (id) await prisma.batch.update({ where: { id }, data });
   else await prisma.batch.create({ data });
   revalidatePath("/admin/settings", "layout");
+  revalidatePath("/admin/attendance");
 }
 
 export async function upsertBelt(formData: FormData) {
@@ -471,6 +493,19 @@ export async function markAttendance(formData: FormData) {
   revalidatePath("/admin/reports/attendance");
 }
 
+async function allocateUniqueKioskPin() {
+  for (let i = 0; i < 40; i++) {
+    const pin = generateKioskPin();
+    const hash = hashKioskPin(pin);
+    const taken = await prisma.kioskDevice.findFirst({
+      where: { OR: [{ tokenHash: hash }, { pin }], isActive: true },
+      select: { id: true },
+    });
+    if (!taken) return pin;
+  }
+  throw new Error("Could not allocate a unique PIN — try again");
+}
+
 export async function createKioskDevice(formData: FormData) {
   await requireAdmin();
   const name = String(formData.get("name") || "").trim();
@@ -481,20 +516,34 @@ export async function createKioskDevice(formData: FormData) {
   const branch = await prisma.branch.findUnique({ where: { id: branchId } });
   if (!branch) throw new Error("Branch not found");
 
-  const token = generateKioskToken();
+  const requested = String(formData.get("pin") || "").trim();
+  let pin: string;
+  if (requested) {
+    if (!isValidKioskPin(requested)) throw new Error("PIN must be exactly 4 digits");
+    const hash = hashKioskPin(requested);
+    const taken = await prisma.kioskDevice.findFirst({
+      where: { OR: [{ tokenHash: hash }, { pin: requested }], isActive: true },
+      select: { id: true },
+    });
+    if (taken) throw new Error("PIN already in use");
+    pin = requested;
+  } else {
+    pin = await allocateUniqueKioskPin();
+  }
+
   const device = await prisma.kioskDevice.create({
     data: {
       name,
       branchId,
-      token,
-      tokenHash: hashKioskToken(token),
-      tokenHint: kioskTokenHint(token),
+      pin,
+      tokenHash: hashKioskPin(pin),
+      tokenHint: kioskPinHint(pin),
       isActive: true,
     },
   });
 
   revalidatePath("/admin/settings/kiosk-devices");
-  return { id: device.id, token };
+  return { id: device.id, pin };
 }
 
 export async function setKioskDeviceActive(formData: FormData) {
@@ -505,16 +554,16 @@ export async function setKioskDeviceActive(formData: FormData) {
   revalidatePath("/admin/settings/kiosk-devices");
 }
 
-export async function regenerateKioskToken(formData: FormData) {
+export async function regenerateKioskPin(formData: FormData) {
   await requireAdmin();
   const id = String(formData.get("id"));
-  const token = generateKioskToken();
+  const pin = await allocateUniqueKioskPin();
   await prisma.kioskDevice.update({
     where: { id },
     data: {
-      token,
-      tokenHash: hashKioskToken(token),
-      tokenHint: kioskTokenHint(token),
+      pin,
+      tokenHash: hashKioskPin(pin),
+      tokenHint: kioskPinHint(pin),
     },
   });
   revalidatePath("/admin/settings/kiosk-devices");
