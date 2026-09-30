@@ -5,7 +5,7 @@ import { getAcademySettings } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import { normalizeRfidUid } from "@/lib/rfid";
 
-const DUPLICATE_WINDOW_MS = 15_000;
+const DUPLICATE_WINDOW_MS = 5_000;
 
 export type MarkAttendanceInput = {
   memberId: string;
@@ -32,7 +32,7 @@ export type KioskPunchResult = {
 const PUNCH_MESSAGES: Record<AttendancePunchStatus, string> = {
   PRESENT: "Present",
   ALREADY_MARKED: "Already marked",
-  DUPLICATE: "Already marked",
+  DUPLICATE: "Please wait",
   UNKNOWN_CARD: "Unknown card",
   INACTIVE: "Member inactive",
   EXPIRED: "Membership expired",

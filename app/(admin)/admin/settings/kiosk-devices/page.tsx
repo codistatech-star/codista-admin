@@ -31,7 +31,7 @@ function punchLabel(status: string) {
     case "ALREADY_MARKED":
       return "Already marked";
     case "DUPLICATE":
-      return "Duplicate";
+      return "Please wait";
     case "UNKNOWN_CARD":
       return "Unknown card";
     case "INACTIVE":
