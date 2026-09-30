@@ -356,6 +356,10 @@ export async function saveMember(formData: FormData) {
   }
 
   revalidatePath("/admin/members");
+  if (memberId) {
+    revalidatePath(`/admin/members/${memberId}`);
+    revalidatePath(`/admin/members/${memberId}/edit`);
+  }
   return { id: memberId, code };
 }
 
@@ -367,6 +371,32 @@ export async function setMemberActive(formData: FormData) {
   if (!canAccessBranch(user, member.branchId)) throw new Error("Forbidden");
   await prisma.member.update({ where: { id }, data: { isActive } });
   revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${id}`);
+  revalidatePath(`/admin/members/${id}/edit`);
+}
+
+export async function updateMemberPhoto(formData: FormData) {
+  const user = await requireSession();
+  const id = String(formData.get("id") || "");
+  const photoUrlRaw = String(formData.get("photoUrl") || "").trim();
+  const photoUrl = photoUrlRaw || null;
+  if (!id) throw new Error("Member id required");
+
+  const member = await prisma.member.findUniqueOrThrow({
+    where: { id },
+    select: { branchId: true, photoUrl: true },
+  });
+  if (!canAccessBranch(user, member.branchId)) throw new Error("Forbidden");
+
+  if (member.photoUrl && member.photoUrl !== photoUrl) {
+    const { deleteR2ObjectByUrl } = await import("@/lib/r2");
+    await deleteR2ObjectByUrl(member.photoUrl);
+  }
+
+  await prisma.member.update({ where: { id }, data: { photoUrl } });
+  revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${id}`);
+  revalidatePath(`/admin/members/${id}/edit`);
 }
 
 export async function getPaymentQuote(memberId: string) {
@@ -465,6 +495,7 @@ export async function collectPayment(formData: FormData) {
   revalidatePath("/admin/reports/payments");
   revalidatePath("/admin/reports/cashflow");
   revalidatePath("/admin/members");
+  revalidatePath(`/admin/members/${memberId}`);
   revalidatePath("/admin/cashflow");
   revalidatePath("/admin/dashboard");
   return receiptNo;

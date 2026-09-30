@@ -38,20 +38,27 @@ export function SquareImageUpload({
   required,
   className,
   existingUrl,
+  onUploadingChange,
 }: {
-  folder: "achievements" | "gallery" | "leadership" | "events";
+  folder: "achievements" | "gallery" | "leadership" | "events" | "members";
   name?: string;
   label?: string;
   required?: boolean;
   className?: string;
   /** Keep current photo on edit unless a new file is chosen. */
   existingUrl?: string | null;
+  onUploadingChange?: (uploading: boolean) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(existingUrl ?? null);
   const [publicUrl, setPublicUrl] = useState(existingUrl ?? "");
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  function setUploadingState(next: boolean) {
+    setUploading(next);
+    onUploadingChange?.(next);
+  }
 
   async function onFileChange(file: File | null) {
     setError(null);
@@ -61,7 +68,7 @@ export function SquareImageUpload({
       return;
     }
 
-    setUploading(true);
+    setUploadingState(true);
     try {
       const { blob, contentType } = await cropToSquareBlob(file);
       const localUrl = URL.createObjectURL(blob);
@@ -86,7 +93,7 @@ export function SquareImageUpload({
       setPreview(existingUrl ?? null);
       setError(err instanceof Error ? err.message : "Upload failed");
     } finally {
-      setUploading(false);
+      setUploadingState(false);
       if (inputRef.current) inputRef.current.value = "";
     }
   }

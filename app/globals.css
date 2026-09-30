@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 @theme {
   --font-display: "Cinzel", ui-serif, Georgia, serif;
@@ -106,7 +106,7 @@
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
-/* —— Admin app (logo-aligned: navy + red) —— */
+/* ?? Admin app (logo-aligned: navy + red) ?? */
 .admin-app {
   --admin-navy: #2f2a7a;
   --admin-navy-soft: #3d378f;
@@ -946,4 +946,243 @@
 .admin-app .admin-sidebar-nav::-webkit-scrollbar-thumb,
 .admin-app .admin-sidebar-nav *::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.28);
+}
+
+
+.member-id-card-modal {
+  max-width: 22rem;
+}
+
+/* Member ID card (portrait PVC 54x85.6mm) */
+.member-id-card {
+  width: 54mm;
+  height: 85.6mm;
+  box-sizing: border-box;
+  border: 1px solid var(--admin-border, #e5e7eb);
+  border-radius: 0.35rem;
+  background: #fff;
+  color: #111827;
+  padding: 2mm 2.5mm 2mm;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4mm;
+  overflow: hidden;
+  font-size: 6pt;
+  line-height: 1.2;
+}
+
+.member-id-card__header {
+  display: flex;
+  align-items: center;
+  gap: 1.6mm;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 1.2mm;
+  flex-shrink: 0;
+}
+
+.member-id-card__logo {
+  width: 9mm;
+  height: 9mm;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.member-id-card__brand {
+  font-size: 7pt;
+  font-weight: 700;
+  color: #2f2a7a;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.member-id-card__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2mm;
+}
+
+.member-id-card__photo {
+  width: 18mm;
+  height: 21mm;
+  margin: 0 auto;
+  flex-shrink: 0;
+  border-radius: 0.2rem;
+  border: 1px solid #e5e7eb;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-weight: 700;
+  color: #2f2a7a;
+  font-size: 9pt;
+}
+
+.member-id-card__photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.member-id-card__meta {
+  min-width: 0;
+  min-height: 0;
+  text-align: center;
+}
+
+.member-id-card__name {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.member-id-card__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 6.5pt;
+  color: #6b7280;
+  margin-top: 0.3mm;
+  margin-bottom: 1mm;
+}
+
+.member-id-card__meta dl {
+  display: grid;
+  gap: 1.4mm;
+  margin: 0;
+  text-align: left;
+}
+
+.member-id-card__meta dl > div {
+  display: grid;
+  grid-template-columns: 13mm 1fr;
+  gap: 0.8mm;
+  align-items: start;
+}
+
+.member-id-card__meta dt {
+  margin: 0;
+  color: #6b7280;
+  font-size: 5pt;
+  line-height: 1.25;
+  padding-top: 0.1mm;
+}
+
+.member-id-card__meta dd {
+  margin: 0;
+  font-weight: 600;
+  font-size: 6pt;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.member-id-card__nowrap {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.member-id-card__emergency dd {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15mm;
+}
+
+.member-id-card__emergency-name {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.member-id-card__emergency-phone {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.member-id-card__barcode {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: 8mm;
+  overflow: hidden;
+  margin-top: auto;
+  margin-bottom: 0;
+}
+
+.member-id-card__barcode svg {
+  width: 100%;
+  height: 7mm;
+  max-width: 100%;
+}
+
+.member-id-card__footer {
+  flex-shrink: 0;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1mm;
+  margin-top: 0.4mm;
+  text-align: center;
+}
+
+.member-id-card__tagline {
+  font-size: 5pt;
+  font-weight: 700;
+  color: #2f2a7a;
+  letter-spacing: 0.01em;
+  margin-bottom: 0.6mm;
+}
+
+.member-id-card__footer-line {
+  font-size: 4.5pt;
+  color: #6b7280;
+  line-height: 1.25;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+@media print {
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .member-id-card-print-root,
+  .member-id-card-print-root * {
+    visibility: visible !important;
+  }
+
+  .member-id-card-print-root {
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #fff !important;
+    padding: 0 !important;
+    z-index: 99999 !important;
+  }
+
+  .member-id-card {
+    box-shadow: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
 }

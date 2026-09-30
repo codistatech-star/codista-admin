@@ -8,7 +8,13 @@ const MAX_BYTES = 4 * 1024 * 1024; // 4MB after client crop
 
 function parseFolder(raw: FormDataEntryValue | null): R2Folder | null {
   const value = String(raw || "");
-  if (value === "gallery" || value === "achievements" || value === "leadership" || value === "events")
+  if (
+    value === "gallery" ||
+    value === "achievements" ||
+    value === "leadership" ||
+    value === "events" ||
+    value === "members"
+  )
     return value;
   return null;
 }

@@ -100,36 +100,39 @@ export default async function MembersPage({
 
       <AdminStickyDock>
         <AdminCard>
-          <form className="flex flex-wrap gap-3">
+          <form className="flex flex-wrap items-center gap-3">
             <input
-              className="admin-input w-full md:max-w-xs"
+              className="admin-input min-w-[12rem] flex-1 basis-[14rem] md:max-w-xs"
               name="q"
               placeholder="Search name / code / mobile"
               defaultValue={sp.q}
             />
-            <div className="flex w-full gap-3 md:w-auto">
-              <AdminSelect
-                className="min-w-0 flex-1 md:w-auto md:min-w-[12rem] md:max-w-xs md:flex-none"
-                name="batchId"
-                defaultValue={sp.batchId ?? ""}
-                placeholder="All batches"
-                options={batches.map((b) => ({ value: b.id, label: b.name }))}
-              />
-              <AdminSelect
-                className="min-w-0 flex-1 md:w-auto md:min-w-[12rem] md:max-w-xs md:flex-none"
-                name="status"
-                defaultValue={statusFilter}
-                placeholder="All statuses"
-                options={[
-                  { value: "ACTIVE", label: "Active" },
-                  { value: "EXPIRING", label: "Expiring" },
-                  { value: "EXPIRED", label: "Expired" },
-                  { value: "INACTIVE", label: "Inactive" },
-                  { value: "NONE", label: "No membership" },
-                ]}
-              />
-            </div>
-            <SubmitButton pendingLabel="Filtering…">Filter</SubmitButton>
+            <AdminSelect
+              className="min-w-[10rem] flex-1 basis-[10rem] sm:max-w-[14rem]"
+              name="batchId"
+              defaultValue={sp.batchId ?? ""}
+              placeholder="All batches"
+              options={batches.map((b) => ({ value: b.id, label: b.name }))}
+            />
+            <AdminSelect
+              className="min-w-[10rem] flex-1 basis-[10rem] sm:max-w-[14rem]"
+              name="status"
+              defaultValue={statusFilter}
+              placeholder="All statuses"
+              options={[
+                { value: "ACTIVE", label: "Active" },
+                { value: "EXPIRING", label: "Expiring" },
+                { value: "EXPIRED", label: "Expired" },
+                { value: "INACTIVE", label: "Inactive" },
+                { value: "NONE", label: "No membership" },
+              ]}
+            />
+            <SubmitButton className="shrink-0" pendingLabel="Searching…">
+              Search
+            </SubmitButton>
+            <Link href="/admin/members" className="btn-secondary shrink-0">
+              Clear
+            </Link>
           </form>
         </AdminCard>
       </AdminStickyDock>

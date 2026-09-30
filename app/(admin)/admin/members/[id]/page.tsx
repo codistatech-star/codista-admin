@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 import {
   PageHeader,
   AdminCard,
@@ -6,18 +8,32 @@ import {
   AdminResponsiveList,
   AdminListCard,
 } from "@/components/admin/ui";
+import { BatchMiniBars } from "@/components/admin/BatchMiniBars";
 import { CollectPaymentModal } from "@/components/admin/CollectPaymentModal";
-import { NewMemberForm } from "@/components/admin/NewMemberForm";
+import { MemberIdCardPrint } from "@/components/admin/MemberIdCard";
+import { MemberPhotoUpload } from "@/components/admin/MemberPhotoUpload";
 import { PaymentHistoryYearSelect } from "@/components/admin/PaymentHistoryYearSelect";
 import { canAccessBranch, requireSession } from "@/lib/auth-helpers";
-import {
-  getAcademySettings,
-  membershipStatus,
-  statusLabel,
-  type JoiningSlab,
-} from "@/lib/membership";
+import { getMemberPerformance } from "@/lib/member-attendance";
+import { getAcademySettings, membershipStatus, statusLabel } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import { formatDate, formatINR } from "@/lib/utils";
+
+function DetailItem({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs text-[var(--admin-muted)]">{label}</dt>
+      <dd className="mt-0.5 text-sm text-gray-900">{value || "—"}</dd>
+    </div>
+  );
+}
+
+function trendLabel(trend: number | null) {
+  if (trend == null) return "—";
+  if (trend > 0) return `↑ ${trend}%`;
+  if (trend < 0) return `↓ ${Math.abs(trend)}%`;
+  return "→ 0%";
+}
 
 export default async function MemberDetailPage({
   params,
@@ -38,6 +54,7 @@ export default async function MemberDetailPage({
       membership: true,
       classPlan: true,
       beltGrade: true,
+      branch: true,
       batches: { include: { batch: true } },
       extraClasses: { include: { extraClass: true } },
     },
@@ -56,15 +73,7 @@ export default async function MemberDetailPage({
   const yearFrom = new Date(selectedYear, 0, 1);
   const yearTo = new Date(selectedYear + 1, 0, 1);
 
-  const [plans, extras, batches, belts, bloodGroups, payments] = await Promise.all([
-    prisma.classPlan.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
-    prisma.extraClass.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
-    prisma.batch.findMany({
-      where: { isActive: true, OR: [{ branchId: member.branchId }, { branchId: null }] },
-      orderBy: { sortOrder: "asc" },
-    }),
-    prisma.beltGrade.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
-    prisma.bloodGroup.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+  const [payments, performance] = await Promise.all([
     prisma.payment.findMany({
       where: {
         memberId: member.id,
@@ -72,6 +81,7 @@ export default async function MemberDetailPage({
       },
       orderBy: { paidAt: "desc" },
     }),
+    getMemberPerformance(member.id),
   ]);
 
   const status = membershipStatus(
@@ -97,40 +107,130 @@ export default async function MemberDetailPage({
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <span className={badge}>{statusLabel(status)}</span>
+            <Link href={`/admin/members/${member.id}/edit`} className="btn-secondary">
+              Edit
+            </Link>
+            <MemberIdCardPrint
+              member={{
+                name: member.name,
+                code: member.code,
+                dob: member.dob,
+                mobile: member.mobile,
+                fatherName: member.fatherName,
+                fatherContact: member.fatherContact,
+                bloodGroup: member.bloodGroup,
+                photoUrl: member.photoUrl,
+                branchAddress: member.branch.address,
+                branchPhone: member.branch.phone,
+              }}
+            />
             <CollectPaymentModal trigger="Collect payment" memberId={member.id} />
           </div>
         }
       />
 
-      <NewMemberForm
-        mode="edit"
-        plans={plans.map((p) => ({ id: p.id, name: p.name, fee: Number(p.fee) }))}
-        extras={extras.map((e) => ({ id: e.id, name: e.name, fee: Number(e.fee) }))}
-        batches={batches.map((b) => ({ id: b.id, name: b.name }))}
-        belts={belts.map((b) => ({ id: b.id, name: b.name }))}
-        bloodGroups={bloodGroups.map((g) => ({ name: g.name }))}
-        joiningFee={Number(settings.joiningFee)}
-        joiningFeeSlabs={(settings.joiningFeeSlabs as JoiningSlab[]) ?? []}
-        defaults={{
-          id: member.id,
-          name: member.name,
-          gender: member.gender,
-          dob: member.dob.toISOString().slice(0, 10),
-          bloodGroup: member.bloodGroup ?? "",
-          mobile: member.mobile,
-          address: member.address,
-          fatherName: member.fatherName ?? "",
-          fatherContact: member.fatherContact ?? "",
-          institute: member.institute ?? "",
-          schoolClass: member.schoolClass ?? "",
-          joiningDate: member.joiningDate.toISOString().slice(0, 10),
-          classPlanId: member.classPlanId,
-          beltGradeId: member.beltGradeId,
-          batchIds: member.batches.map((b) => b.batchId),
-          extraClassIds: member.extraClasses.map((e) => e.extraClassId),
-          rfidUid: member.rfidUid ?? "",
-        }}
-      />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <AdminCard title="Profile">
+          <div className="space-y-4">
+            <MemberPhotoUpload memberId={member.id} existingUrl={member.photoUrl} />
+            <dl className="grid grid-cols-2 gap-3">
+              <DetailItem label="Gender" value={member.gender} />
+              <DetailItem label="DOB" value={formatDate(member.dob)} />
+              <DetailItem label="Mobile" value={member.mobile} />
+              <DetailItem label="Blood group" value={member.bloodGroup} />
+              <DetailItem label="Emergency name" value={member.fatherName} />
+              <DetailItem label="Emergency contact" value={member.fatherContact} />
+              <div className="col-span-2">
+                <DetailItem label="Address" value={member.address} />
+              </div>
+              <DetailItem label="Institute" value={member.institute} />
+              <DetailItem label="Class / grade" value={member.schoolClass} />
+            </dl>
+          </div>
+        </AdminCard>
+
+        <AdminCard title="Academy">
+          <dl className="grid grid-cols-2 gap-3">
+            <DetailItem label="Branch" value={member.branch.name} />
+            <DetailItem label="Joining date" value={formatDate(member.joiningDate)} />
+            <DetailItem label="Class plan" value={member.classPlan.name} />
+            <DetailItem label="Belt" value={member.beltGrade.name} />
+            <DetailItem
+              label="Batches"
+              value={member.batches.map((b) => b.batch.name).join(", ") || "—"}
+            />
+            <DetailItem
+              label="Extra classes"
+              value={member.extraClasses.map((e) => e.extraClass.name).join(", ") || "—"}
+            />
+            <DetailItem
+              label="Valid until"
+              value={formatDate(member.membership?.validUntil)}
+            />
+            <DetailItem
+              label="RFID card"
+              value={
+                member.rfidUid
+                  ? `Assigned${member.rfidAssignedAt ? ` · ${formatDate(member.rfidAssignedAt)}` : ""}`
+                  : "Not assigned"
+              }
+            />
+          </dl>
+        </AdminCard>
+      </div>
+
+      <AdminCard title="Attendance performance">
+        {performance && performance.byBatch.length ? (
+          <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-start">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+                This month ({performance.monthLabel})
+              </p>
+              <BatchMiniBars batches={performance.byBatch} />
+            </div>
+            <dl className="grid grid-cols-2 gap-3 text-sm md:min-w-[14rem] md:grid-cols-1">
+              <div>
+                <dt className="text-xs text-[var(--admin-muted)]">Overall</dt>
+                <dd className="font-semibold text-[var(--admin-navy)]">
+                  {performance.pct != null ? `${performance.pct}%` : "—"}{" "}
+                  <span className="font-normal text-[var(--admin-muted)]">
+                    ({performance.present}/{performance.sessionsHeld})
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-[var(--admin-muted)]">Last month</dt>
+                <dd>
+                  {performance.lastPct != null
+                    ? `${performance.lastPct}% (${performance.lastPresent}/${performance.lastSessionsHeld})`
+                    : "—"}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-[var(--admin-muted)]">Trend</dt>
+                <dd
+                  className={
+                    performance.trend != null && performance.trend > 0
+                      ? "text-emerald-600"
+                      : performance.trend != null && performance.trend < 0
+                        ? "text-[var(--admin-red)]"
+                        : undefined
+                  }
+                >
+                  {trendLabel(performance.trend)}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        ) : (
+          <p className="text-sm text-[var(--admin-muted)]">
+            No batch mapping — attendance rates appear after the member is mapped to a batch.
+          </p>
+        )}
+        <p className="mt-3 text-xs text-[var(--admin-muted)]">
+          Rates use full calendar days in the month. Unmarked days count as absent.
+        </p>
+      </AdminCard>
 
       <AdminCard
         title="Payment history"

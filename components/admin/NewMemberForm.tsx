@@ -143,6 +143,7 @@ export function NewMemberForm({
         const result = await saveMember(fd);
         setSavedMemberId(result.id);
         if (mode === "edit") {
+          router.push(`/admin/members/${result.id}`);
           router.refresh();
           return;
         }

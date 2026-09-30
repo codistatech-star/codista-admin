@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CollectPaymentModal } from "@/components/admin/CollectPaymentModal";
@@ -11,6 +12,20 @@ function CollectIcon() {
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
         stroke="currentColor"
         strokeWidth="2"
         strokeLinecap="round"
@@ -48,6 +63,14 @@ export function MemberRowActions({
 
   return (
     <div className="flex items-center gap-1.5">
+      <Link
+        href={`/admin/members/${memberId}/edit`}
+        className="admin-icon-btn"
+        title="Edit member"
+        aria-label="Edit member"
+      >
+        <EditIcon />
+      </Link>
       <button
         type="button"
         className="admin-icon-btn"

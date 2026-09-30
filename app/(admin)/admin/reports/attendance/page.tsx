@@ -4,18 +4,15 @@ import { AttendanceReportPanel } from "@/components/admin/AttendanceReportPanel"
 import { ReportBatchFilter } from "@/components/admin/ReportBatchFilter";
 import { ReportMonthPicker } from "@/components/admin/ReportMonthPicker";
 import { getActiveBranchId, requireSession } from "@/lib/auth-helpers";
-import {
-  parseAttendanceReportPage,
-  parseAttendanceReportTab,
-} from "@/lib/attendance-report-params";
+import { parseAttendanceReportPage } from "@/lib/attendance-report-params";
 import { prisma } from "@/lib/prisma";
 import { buildAttendanceReport } from "@/lib/report-attendance";
-import { parseReportMonth, reportMonthLabel } from "@/lib/report-month";
+import { parseReportMonth, reportMonthLabel, daysInReportMonth } from "@/lib/report-month";
 
 export default async function AttendanceReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; batch?: string; tab?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ month?: string; batch?: string; q?: string; page?: string }>;
 }) {
   const user = await requireSession();
   const branchId = await getActiveBranchId(user);
@@ -32,7 +29,6 @@ export default async function AttendanceReportPage({
   const { month, start, end } = parseReportMonth(sp.month);
   const prevStart = subMonths(start, 1);
   const batchFilter = sp.batch?.trim() || null;
-  const tab = parseAttendanceReportTab(sp.tab);
   const q = sp.q?.trim() ?? "";
   const page = parseAttendanceReportPage(sp.page);
 
@@ -63,17 +59,19 @@ export default async function AttendanceReportPage({
     }),
     prisma.attendanceSession.findMany({
       where: { branchId, date: { gte: start, lt: end } },
-      include: {
-        batch: { select: { name: true } },
-        takenBy: { select: { name: true } },
+      select: {
+        id: true,
+        date: true,
+        batchId: true,
         entries: { select: { memberId: true, isPresent: true } },
       },
     }),
     prisma.attendanceSession.findMany({
       where: { branchId, date: { gte: prevStart, lt: start } },
-      include: {
-        batch: { select: { name: true } },
-        takenBy: { select: { name: true } },
+      select: {
+        id: true,
+        date: true,
+        batchId: true,
         entries: { select: { memberId: true, isPresent: true } },
       },
     }),
@@ -84,21 +82,14 @@ export default async function AttendanceReportPage({
     sessionsThisMonth,
     sessionsLastMonth,
     batchFilter,
+    daysInMonth: daysInReportMonth(start),
+    lastDaysInMonth: daysInReportMonth(prevStart),
   });
 
   const batchOptions = [
     { value: "", label: "All batches" },
     ...batches.map((b) => ({ value: b.id, label: b.name })),
   ];
-
-  const sessionRows = report.sessions.map((s) => ({
-    id: s.id,
-    date: s.date.toISOString(),
-    batchName: s.batchName,
-    present: s.present,
-    marked: s.marked,
-    takenBy: s.takenBy,
-  }));
 
   return (
     <AdminFillPage>
@@ -127,7 +118,7 @@ export default async function AttendanceReportPage({
             {report.overallPct != null ? `${report.overallPct}%` : "—"}
           </p>
           <p className="mt-1 text-xs text-[var(--admin-muted)]">
-            {report.totalPresentMarks}/{report.totalPossibleMarks} present marks
+            {report.totalPresentMarks}/{report.totalPossibleMarks} present day marks
           </p>
         </AdminCard>
         <AdminCard>
@@ -145,13 +136,7 @@ export default async function AttendanceReportPage({
         </AdminCard>
       </div>
 
-      <AttendanceReportPanel
-        members={report.members}
-        sessions={sessionRows}
-        initialTab={tab}
-        initialQ={q}
-        initialPage={page}
-      />
+      <AttendanceReportPanel members={report.members} initialQ={q} initialPage={page} />
     </AdminFillPage>
   );
 }

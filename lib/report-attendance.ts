@@ -2,6 +2,7 @@ export type AttendanceBatchStat = {
   batchId: string;
   name: string;
   present: number;
+  /** Possible days = calendar days in the report month. */
   sessionsHeld: number;
   pct: number | null;
 };
@@ -14,6 +15,7 @@ export type AttendanceMemberStat = {
   batches: string[];
   byBatch: AttendanceBatchStat[];
   present: number;
+  /** Possible day-marks = daysInMonth × mapped batches in scope. */
   sessionsHeld: number;
   pct: number | null;
   lastPresent: number;
@@ -23,20 +25,11 @@ export type AttendanceMemberStat = {
   trend: number | null;
 };
 
-export type AttendanceSessionLog = {
-  id: string;
-  date: Date;
-  batchName: string;
-  present: number;
-  marked: number;
-  takenBy: string | null;
-};
-
 export type AttendanceReport = {
   members: AttendanceMemberStat[];
-  sessions: AttendanceSessionLog[];
   overallPct: number | null;
   below70: number;
+  /** Count of AttendanceSession rows this month (not day denominator). */
   sessionsHeld: number;
   totalPresentMarks: number;
   totalPossibleMarks: number;
@@ -46,8 +39,6 @@ type SessionInput = {
   id: string;
   date: Date;
   batchId: string;
-  batch: { name: string };
-  takenBy: { name: string } | null;
   entries: { memberId: string; isPresent: boolean }[];
 };
 
@@ -75,24 +66,16 @@ export function buildAttendanceReport(input: {
   sessionsThisMonth: SessionInput[];
   sessionsLastMonth: SessionInput[];
   batchFilter?: string | null;
+  daysInMonth: number;
+  lastDaysInMonth: number;
 }): AttendanceReport {
   const batchFilter = input.batchFilter || null;
+  const daysInMonth = Math.max(0, input.daysInMonth);
+  const lastDaysInMonth = Math.max(0, input.lastDaysInMonth);
 
-  const sessions = (batchFilter
+  const sessionsInScope = batchFilter
     ? input.sessionsThisMonth.filter((s) => s.batchId === batchFilter)
-    : input.sessionsThisMonth
-  )
-    .slice()
-    .sort((a, b) => b.date.getTime() - a.date.getTime());
-
-  const sessionLogs: AttendanceSessionLog[] = sessions.map((s) => ({
-    id: s.id,
-    date: s.date,
-    batchName: s.batch.name,
-    present: s.entries.filter((e) => e.isPresent).length,
-    marked: s.entries.length,
-    takenBy: s.takenBy?.name ?? null,
-  }));
+    : input.sessionsThisMonth;
 
   const members = input.members
     .map((m) => {
@@ -105,14 +88,14 @@ export function buildAttendanceReport(input: {
 
       const byBatch: AttendanceBatchStat[] = memberBatches
         .map((b) => {
-          const held = input.sessionsThisMonth.filter((s) => s.batchId === b.batchId);
-          const present = countPresent(held, m.id);
+          const batchSessions = input.sessionsThisMonth.filter((s) => s.batchId === b.batchId);
+          const present = countPresent(batchSessions, m.id);
           return {
             batchId: b.batchId,
             name: b.batch.name,
             present,
-            sessionsHeld: held.length,
-            pct: pct(present, held.length),
+            sessionsHeld: daysInMonth,
+            pct: pct(present, daysInMonth),
           };
         })
         .sort((a, b) => {
@@ -127,8 +110,8 @@ export function buildAttendanceReport(input: {
 
       const present = countPresent(heldThis, m.id);
       const lastPresent = countPresent(heldLast, m.id);
-      const sessionsHeld = heldThis.length;
-      const lastSessionsHeld = heldLast.length;
+      const sessionsHeld = daysInMonth * byBatch.length;
+      const lastSessionsHeld = lastDaysInMonth * byBatch.length;
       const thisPct = pct(present, sessionsHeld);
       const lastPct = pct(lastPresent, lastSessionsHeld);
       const trend =
@@ -169,10 +152,9 @@ export function buildAttendanceReport(input: {
 
   return {
     members,
-    sessions: sessionLogs,
     overallPct,
     below70,
-    sessionsHeld: sessions.length,
+    sessionsHeld: sessionsInScope.length,
     totalPresentMarks,
     totalPossibleMarks,
   };
