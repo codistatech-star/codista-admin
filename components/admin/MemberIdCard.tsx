@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
+import { toPng } from "html-to-image";
 import JsBarcode from "jsbarcode";
 import { AdminModal } from "@/components/admin/ui";
 import { formatDate } from "@/lib/utils";
@@ -46,7 +47,59 @@ function MemberBarcode({ code }: { code: string }) {
   );
 }
 
-function IdCardFace({ member }: { member: MemberIdCardData }) {
+function blobToDataUrl(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read image"));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function inlineImages(root: HTMLElement) {
+  const images = [...root.querySelectorAll("img")];
+  await Promise.all(
+    images.map(async (img) => {
+      const src = img.getAttribute("src");
+      if (!src || src.startsWith("data:")) return;
+      const absolute = new URL(src, window.location.href);
+      const sameOrigin = absolute.origin === window.location.origin;
+      const fetchUrl = sameOrigin
+        ? `${absolute.pathname}${absolute.search}`
+        : `/api/admin/media-proxy?url=${encodeURIComponent(absolute.href)}`;
+      const res = await fetch(fetchUrl, { credentials: "same-origin" });
+      if (!res.ok) throw new Error("Could not load card image");
+      img.src = await blobToDataUrl(await res.blob());
+    }),
+  );
+}
+
+async function cardToPng(node: HTMLElement) {
+  const clone = node.cloneNode(true) as HTMLElement;
+  clone.setAttribute("aria-hidden", "true");
+  clone.style.position = "fixed";
+  clone.style.left = "-10000px";
+  clone.style.top = "0";
+  clone.style.margin = "0";
+  document.body.appendChild(clone);
+  try {
+    await inlineImages(clone);
+    return await toPng(clone, {
+      pixelRatio: 4,
+      backgroundColor: "#ffffff",
+    });
+  } finally {
+    clone.remove();
+  }
+}
+
+function IdCardFace({
+  member,
+  cardRef,
+}: {
+  member: MemberIdCardData;
+  cardRef?: Ref<HTMLDivElement>;
+}) {
   const initials = member.name
     .split(/\s+/)
     .filter(Boolean)
@@ -55,7 +108,7 @@ function IdCardFace({ member }: { member: MemberIdCardData }) {
     .join("");
 
   return (
-    <div className="member-id-card">
+    <div ref={cardRef} className="member-id-card">
       <div className="member-id-card__header">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo/logo.jpg" alt="" className="member-id-card__logo" />
@@ -122,6 +175,28 @@ function IdCardFace({ member }: { member: MemberIdCardData }) {
 
 export function MemberIdCardPrint({ member }: { member: MemberIdCardData }) {
   const [open, setOpen] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  async function downloadImage() {
+    const card = cardRef.current;
+    if (!card || downloading) return;
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const dataUrl = await cardToPng(card);
+      const safeCode = member.code.replace(/[^\w.-]+/g, "_") || "member";
+      const link = document.createElement("a");
+      link.href = dataUrl;
+      link.download = `${safeCode}-id-card.png`;
+      link.click();
+    } catch {
+      setDownloadError("Could not create the image. Try again.");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   return (
     <>
@@ -136,7 +211,7 @@ export function MemberIdCardPrint({ member }: { member: MemberIdCardData }) {
       >
         <div className="space-y-4">
           <div className="member-id-card-print-root flex justify-center bg-[var(--admin-surface)] p-4">
-            <IdCardFace member={member} />
+            <IdCardFace member={member} cardRef={cardRef} />
           </div>
           <div className="flex flex-wrap gap-2 print:hidden">
             <button
@@ -148,12 +223,25 @@ export function MemberIdCardPrint({ member }: { member: MemberIdCardData }) {
             >
               Print
             </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={downloading}
+              onClick={() => {
+                void downloadImage();
+              }}
+            >
+              {downloading ? "Saving…" : "Download image"}
+            </button>
             <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>
               Close
             </button>
           </div>
+          {downloadError ? (
+            <p className="text-xs text-[var(--admin-red)] print:hidden">{downloadError}</p>
+          ) : null}
           <p className="text-xs text-[var(--admin-muted)] print:hidden">
-            Use your printer dialog. Card size is portrait PVC (54 × 85.6 mm).
+            Print from the dialog, or download a PNG. Card size is portrait PVC (54 × 85.6 mm).
           </p>
         </div>
       </AdminModal>
