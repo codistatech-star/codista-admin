@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type Ref } from "react";
-import { toPng } from "html-to-image";
+import html2canvas from "html2canvas-pro";
 import JsBarcode from "jsbarcode";
 import { AdminModal } from "@/components/admin/ui";
 import { formatDate } from "@/lib/utils";
@@ -75,21 +75,41 @@ async function inlineImages(root: HTMLElement) {
 }
 
 async function cardToPng(node: HTMLElement) {
+  const rect = node.getBoundingClientRect();
+  if (rect.width < 1 || rect.height < 1) throw new Error("Card is not visible");
+
+  const host = document.createElement("div");
+  host.setAttribute("aria-hidden", "true");
+  host.style.position = "fixed";
+  host.style.left = "0";
+  host.style.top = "0";
+  host.style.zIndex = "-1";
+  host.style.margin = "0";
+  host.style.padding = "0";
+  host.style.background = "#ffffff";
+  host.style.pointerEvents = "none";
+
   const clone = node.cloneNode(true) as HTMLElement;
-  clone.setAttribute("aria-hidden", "true");
-  clone.style.position = "fixed";
-  clone.style.left = "-10000px";
-  clone.style.top = "0";
+  clone.style.width = `${rect.width}px`;
+  clone.style.height = `${rect.height}px`;
   clone.style.margin = "0";
-  document.body.appendChild(clone);
+  host.appendChild(clone);
+  document.body.appendChild(host);
+
   try {
     await inlineImages(clone);
-    return await toPng(clone, {
-      pixelRatio: 4,
+    await Promise.all(
+      [...clone.querySelectorAll("img")].map((img) => img.decode().catch(() => undefined)),
+    );
+    const canvas = await html2canvas(clone, {
+      scale: 3,
       backgroundColor: "#ffffff",
+      width: rect.width,
+      height: rect.height,
     });
+    return canvas.toDataURL("image/png");
   } finally {
-    clone.remove();
+    host.remove();
   }
 }
 
