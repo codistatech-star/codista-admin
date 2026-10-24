@@ -22,6 +22,7 @@ const CLUB_NAME = "Codista Academy";
 const WEBSITE = "www.codista.in";
 const BRAND_LINE_1 = "Coimbatore District Sports";
 const BRAND_LINE_2 = "Taekwondo Association";
+const BRAND_REG = "304/2011";
 
 function KickWatermark() {
   return (
@@ -139,7 +140,11 @@ function IdCardFace({
         <img src="/logo/logo.jpg" alt="" className="member-id-card__logo" />
         <p className="member-id-card__brand">
           <span>{BRAND_LINE_1}</span>
-          <span>{BRAND_LINE_2}</span>
+          <span>
+            {BRAND_LINE_2}
+            <sup className="member-id-card__regmark">®</sup>
+            <span className="member-id-card__regno"> {BRAND_REG}</span>
+          </span>
         </p>
       </div>
 
@@ -177,13 +182,15 @@ function IdCardFace({
           </div>
 
           <div className="member-id-card__emergency">
-            <span className="member-id-card__caption">Emergency</span>
+            <span className="member-id-card__caption">Father / Mother</span>
             <span className="member-id-card__emergency-name">
               {member.fatherName || "—"}
             </span>
             {member.fatherContact ? (
               <span className="member-id-card__emergency-phone">{member.fatherContact}</span>
-            ) : null}
+            ) : (
+              <span className="member-id-card__emergency-phone">—</span>
+            )}
           </div>
         </div>
       </div>

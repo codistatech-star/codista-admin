@@ -1021,6 +1021,20 @@
   min-width: 0;
 }
 
+.member-id-card__regmark {
+  font-size: 4.5pt;
+  font-weight: 700;
+  line-height: 0;
+  vertical-align: super;
+}
+
+.member-id-card__regno {
+  font-size: 5.5pt;
+  font-weight: 700;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .member-id-card__body {
   flex: 1;
   min-height: 0;
