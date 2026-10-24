@@ -115,7 +115,6 @@ export default async function MemberDetailPage({
                 name: member.name,
                 code: member.code,
                 dob: member.dob,
-                mobile: member.mobile,
                 fatherName: member.fatherName,
                 fatherContact: member.fatherContact,
                 bloodGroup: member.bloodGroup,

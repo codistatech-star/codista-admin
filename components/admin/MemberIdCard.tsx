@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, type Ref } from "react";
+import { useRef, useState, type Ref } from "react";
 import html2canvas from "html2canvas-pro";
-import JsBarcode from "jsbarcode";
 import { AdminModal } from "@/components/admin/ui";
 import { formatDate } from "@/lib/utils";
 
@@ -10,7 +9,6 @@ export type MemberIdCardData = {
   name: string;
   code: string;
   dob: string | Date;
-  mobile: string;
   fatherName: string | null;
   fatherContact: string | null;
   bloodGroup: string | null;
@@ -20,30 +18,33 @@ export type MemberIdCardData = {
 };
 
 const TAGLINE = "Discipline · Respect · Excellence";
+const CLUB_NAME = "Codista Academy";
+const WEBSITE = "www.codista.in";
+const BRAND_LINE_1 = "Coimbatore District Sports";
+const BRAND_LINE_2 = "Taekwondo Association";
 
-function MemberBarcode({ code }: { code: string }) {
-  const svgRef = useRef<SVGSVGElement>(null);
-
-  useEffect(() => {
-    if (!svgRef.current || !code) return;
-    try {
-      JsBarcode(svgRef.current, code, {
-        format: "CODE128",
-        displayValue: false,
-        margin: 0,
-        height: 22,
-        width: 1.1,
-        background: "transparent",
-      });
-    } catch {
-      // invalid characters for CODE128 — leave empty
-    }
-  }, [code]);
-
+function KickWatermark() {
   return (
-    <div className="member-id-card__barcode" aria-hidden>
-      <svg ref={svgRef} />
-    </div>
+    <svg
+      className="member-id-card__watermark"
+      viewBox="0 0 120 160"
+      aria-hidden
+      focusable="false"
+    >
+      <g fill="#2f2a7a">
+        {/* Head */}
+        <circle cx="62" cy="22" r="10" />
+        {/* Torso */}
+        <path d="M48 34c6-2 22-2 28 0l4 28c-10 4-26 4-36 0z" />
+        {/* Supporting leg */}
+        <path d="M54 60l-6 48c-1 6 2 10 8 10h6c4 0 6-4 5-8l-4-50z" />
+        {/* Kicking leg extended */}
+        <path d="M72 58c18-8 34-4 42 6 3 4 1 9-3 10-8-6-20-8-30-4l-6-8z" />
+        {/* Arms */}
+        <path d="M46 40c-10 6-16 16-14 22 2 3 6 2 8-1 0-6 4-12 10-16z" />
+        <path d="M78 40c8 2 14 10 12 18-1 3-5 3-7 0 0-6-2-10-8-14z" />
+      </g>
+    </svg>
   );
 }
 
@@ -127,12 +128,19 @@ function IdCardFace({
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("");
 
+  const footerContact = [member.branchPhone, WEBSITE].filter(Boolean).join(" · ");
+
   return (
     <div ref={cardRef} className="member-id-card">
+      <KickWatermark />
+
       <div className="member-id-card__header">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/logo/logo.jpg" alt="" className="member-id-card__logo" />
-        <p className="member-id-card__brand">Codista Taekwondo Academy</p>
+        <p className="member-id-card__brand">
+          <span>{BRAND_LINE_1}</span>
+          <span>{BRAND_LINE_2}</span>
+        </p>
       </div>
 
       <div className="member-id-card__body">
@@ -148,45 +156,45 @@ function IdCardFace({
         <div className="member-id-card__meta">
           <p className="member-id-card__name">{member.name}</p>
           <p className="member-id-card__code">{member.code}</p>
-          <dl>
+
+          <div className="member-id-card__facts">
             <div>
-              <dt>DOB</dt>
-              <dd className="member-id-card__nowrap">{formatDate(member.dob)}</dd>
+              <span className="member-id-card__caption">DOB</span>
+              <span className="member-id-card__value member-id-card__nowrap">
+                {formatDate(member.dob)}
+              </span>
             </div>
             <div>
-              <dt>Mobile</dt>
-              <dd className="member-id-card__nowrap">{member.mobile}</dd>
+              <span className="member-id-card__caption">Blood</span>
+              <span className="member-id-card__value member-id-card__nowrap">
+                {member.bloodGroup || "—"}
+              </span>
             </div>
-            {member.bloodGroup ? (
-              <div>
-                <dt>Blood</dt>
-                <dd className="member-id-card__nowrap">{member.bloodGroup}</dd>
-              </div>
+            <div>
+              <span className="member-id-card__caption">Club</span>
+              <span className="member-id-card__value member-id-card__nowrap">{CLUB_NAME}</span>
+            </div>
+          </div>
+
+          <div className="member-id-card__emergency">
+            <span className="member-id-card__caption">Emergency</span>
+            <span className="member-id-card__emergency-name">
+              {member.fatherName || "—"}
+            </span>
+            {member.fatherContact ? (
+              <span className="member-id-card__emergency-phone">{member.fatherContact}</span>
             ) : null}
-            <div className="member-id-card__emergency">
-              <dt>Emergency</dt>
-              <dd>
-                <span className="member-id-card__emergency-name">
-                  {member.fatherName || "—"}
-                </span>
-                {member.fatherContact ? (
-                  <span className="member-id-card__emergency-phone">{member.fatherContact}</span>
-                ) : null}
-              </dd>
-            </div>
-          </dl>
+          </div>
         </div>
       </div>
-
-      <MemberBarcode code={member.code} />
 
       <div className="member-id-card__footer">
         <p className="member-id-card__tagline">{TAGLINE}</p>
         {member.branchAddress ? (
           <p className="member-id-card__footer-line">{member.branchAddress}</p>
         ) : null}
-        {member.branchPhone ? (
-          <p className="member-id-card__footer-line">{member.branchPhone}</p>
+        {footerContact ? (
+          <p className="member-id-card__footer-line">{footerContact}</p>
         ) : null}
       </div>
     </div>
