@@ -135,10 +135,10 @@ export function AddCashEntryModal({
           Description
           <input className="admin-input mt-1" name="description" placeholder="Description" />
         </label>
-        <label className="admin-label">
+        <div className="admin-label">
           Date
           <AdminDatePicker className="mt-1" name="entryDate" defaultValue={defaultDate} />
-        </label>
+        </div>
         {error ? <p className="text-sm text-[var(--admin-red)]">{error}</p> : null}
         <SubmitButton className="w-full" disabled={pending}>
           {pending ? "Saving…" : "Save entry"}

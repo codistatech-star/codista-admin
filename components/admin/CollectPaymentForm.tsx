@@ -135,7 +135,7 @@ export function CollectPaymentForm({
             ]}
           />
         </label>
-        <label className="admin-label">
+        <div className="admin-label">
           Paid at
           <AdminDatePicker
             className="mt-1"
@@ -144,7 +144,7 @@ export function CollectPaymentForm({
             defaultValue={paidAtDefault}
             timeDefault={paidAtDefault.slice(11, 16) || "00:00"}
           />
-        </label>
+        </div>
         <label className="admin-label">
           Notes
           <textarea className="admin-input mt-1" name="notes" rows={2} />

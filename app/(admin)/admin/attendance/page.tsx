@@ -160,10 +160,10 @@ export default async function AttendancePage({
       <AdminStickyDock>
         <AdminCard>
           <form className="flex flex-wrap gap-3">
-            <label className="admin-label w-full md:w-auto">
+            <div className="admin-label w-full md:w-auto">
               Date
               <AdminDatePicker className="mt-1 w-full md:w-auto" name="date" defaultValue={dateStr} />
-            </label>
+            </div>
             <label className="admin-label w-full md:w-auto">
               Batch
               <AdminSelect

@@ -11,8 +11,6 @@ import {
   isSameMonth,
   isToday,
   parse,
-  setMonth,
-  setYear,
   startOfMonth,
   startOfWeek,
   subMonths,
@@ -37,6 +35,8 @@ const MONTHS = [
 ] as const;
 
 const YEAR_PAGE_SIZE = 12;
+/** Ignore day taps briefly after month/year pick (iOS ghost click). */
+const GHOST_CLICK_MS = 400;
 
 type PickerView = "day" | "month" | "year";
 
@@ -52,6 +52,11 @@ function toYmd(d: Date) {
 
 function decadeStart(year: number) {
   return Math.floor(year / YEAR_PAGE_SIZE) * YEAR_PAGE_SIZE;
+}
+
+/** Local calendar date at noon — avoids DST / midnight edge cases. */
+function calendarDate(year: number, monthIndex: number, day = 1) {
+  return new Date(year, monthIndex, day, 12, 0, 0, 0);
 }
 
 export function AdminDatePicker({
@@ -86,6 +91,7 @@ export function AdminDatePicker({
 }) {
   const reactId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const ignoreDayUntilRef = useRef(0);
   const initial = controlledValue ?? defaultValue ?? "";
   const maxYear = toYear ?? new Date().getFullYear() + 10;
 
@@ -111,11 +117,11 @@ export function AdminDatePicker({
 
   useEffect(() => {
     if (!open) return;
-    const onDoc = (e: MouseEvent) => {
+    const onDoc = (e: PointerEvent) => {
       if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    document.addEventListener("pointerdown", onDoc);
+    return () => document.removeEventListener("pointerdown", onDoc);
   }, [open]);
 
   useEffect(() => {
@@ -142,10 +148,15 @@ export function AdminDatePicker({
     );
   }, [yearPageStart, fromYear, maxYear]);
 
+  function armGhostClickGuard() {
+    ignoreDayUntilRef.current = Date.now() + GHOST_CLICK_MS;
+  }
+
   function commitDate(d: Date) {
+    if (Date.now() < ignoreDayUntilRef.current) return;
     const next = toYmd(d);
     setDateStr(next);
-    setViewMonth(d);
+    setViewMonth(calendarDate(d.getFullYear(), d.getMonth(), d.getDate()));
     const full = withTime ? `${next}T${timeStr || timeDefault}` : next;
     onChange?.(full);
     if (!withTime) setOpen(false);
@@ -174,12 +185,14 @@ export function AdminDatePicker({
   }
 
   function pickMonth(monthIndex: number) {
-    setViewMonth((m) => setMonth(m, monthIndex));
+    armGhostClickGuard();
+    setViewMonth((m) => calendarDate(m.getFullYear(), monthIndex, 1));
     setView("day");
   }
 
   function pickYear(year: number) {
-    setViewMonth((m) => setYear(m, year));
+    armGhostClickGuard();
+    setViewMonth((m) => calendarDate(year, m.getMonth(), 1));
     setView("month");
   }
 
@@ -271,9 +284,10 @@ export function AdminDatePicker({
                 {days.map((day) => {
                   const inMonth = isSameMonth(day, viewMonth);
                   const isSel = selected ? isSameDay(day, selected) : false;
+                  const dayKey = toYmd(day);
                   return (
                     <button
-                      key={day.toISOString()}
+                      key={dayKey}
                       type="button"
                       className={cn(
                         "admin-datepicker-day",

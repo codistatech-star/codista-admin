@@ -204,10 +204,10 @@ export function NewMemberForm({
                 ]}
               />
             </label>
-            <label className="admin-label">
+            <div className="admin-label">
               DOB
               <AdminDatePicker className="mt-1" name="dob" required defaultValue={defaults?.dob} />
-            </label>
+            </div>
             <label className="admin-label">
               Blood group
               <AdminSelect
@@ -267,7 +267,7 @@ export function NewMemberForm({
 
         <AdminCard title="Academy">
           <div className="grid gap-4 md:grid-cols-4">
-            <label className="admin-label">
+            <div className="admin-label">
               Joining date
               <AdminDatePicker
                 className="mt-1"
@@ -276,7 +276,7 @@ export function NewMemberForm({
                 value={joiningDate}
                 onChange={setJoiningDate}
               />
-            </label>
+            </div>
             <label className="admin-label">
               Belt
               <AdminSelect
