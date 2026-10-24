@@ -960,11 +960,10 @@
   height: 85.6mm;
   box-sizing: border-box;
   border: 1px solid var(--admin-border, #e5e7eb);
-  border-left: 1.2mm solid #2f2a7a;
   border-radius: 0.35rem;
   background: #fff;
   color: #111827;
-  padding: 2mm 2.5mm 2mm 2.2mm;
+  padding: 2mm 2.5mm 2mm;
   display: flex;
   flex-direction: column;
   gap: 1.4mm;
