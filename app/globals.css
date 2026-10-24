@@ -996,7 +996,7 @@
   align-items: center;
   gap: 1.6mm;
   border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 1.2mm;
+  padding-bottom: 0.4mm;
   flex-shrink: 0;
 }
 
@@ -1010,13 +1010,13 @@
 .member-id-card__brand {
   display: flex;
   flex-direction: column;
-  gap: 0.35mm;
+  gap: 0.25mm;
   margin: 0;
-  font-size: 6pt;
+  font-size: 7pt;
   font-weight: 700;
   color: #2f2a7a;
   letter-spacing: 0;
-  line-height: 1.2;
+  line-height: 1.15;
   min-width: 0;
 }
 
@@ -1026,7 +1026,7 @@
 
 .member-id-card__regmark {
   display: inline;
-  font-size: 4.5pt;
+  font-size: 5pt;
   font-weight: 700;
   margin-left: 0.2mm;
   vertical-align: super;
@@ -1034,7 +1034,7 @@
 }
 
 .member-id-card__regno {
-  font-size: 5pt;
+  font-size: 5.5pt;
   font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -1124,8 +1124,6 @@
   display: grid;
   gap: 1.2mm;
   text-align: left;
-  padding-bottom: 1.2mm;
-  border-bottom: 1px solid #e5e7eb;
 }
 
 .member-id-card__facts > div {
