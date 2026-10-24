@@ -19,6 +19,7 @@ export type MemberIdCardData = {
 
 const TAGLINE = "Discipline · Respect · Excellence";
 const CLUB_NAME = "Codista Academy";
+const POSITION = "Student";
 const WEBSITE = "www.codista.in";
 const BRAND_LINE_1 = "Coimbatore District Sports";
 const BRAND_REG = "304/2011";
@@ -180,18 +181,20 @@ function IdCardFace({
               <span className="member-id-card__caption">Club</span>
               <span className="member-id-card__value member-id-card__nowrap">{CLUB_NAME}</span>
             </div>
-          </div>
-
-          <div className="member-id-card__emergency">
-            <span className="member-id-card__caption">Father / Mother</span>
-            <span className="member-id-card__emergency-name">
-              {member.fatherName || "—"}
-            </span>
-            {member.fatherContact ? (
-              <span className="member-id-card__emergency-phone">{member.fatherContact}</span>
-            ) : (
-              <span className="member-id-card__emergency-phone">—</span>
-            )}
+            <div>
+              <span className="member-id-card__caption">Position</span>
+              <span className="member-id-card__value member-id-card__nowrap">{POSITION}</span>
+            </div>
+            <div>
+              <span className="member-id-card__caption">Father / Mother</span>
+              <span className="member-id-card__value">{member.fatherName || "—"}</span>
+            </div>
+            <div>
+              <span className="member-id-card__caption">Contact</span>
+              <span className="member-id-card__value member-id-card__nowrap">
+                {member.fatherContact || "—"}
+              </span>
+            </div>
           </div>
         </div>
       </div>

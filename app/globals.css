@@ -1130,7 +1130,7 @@
 
 .member-id-card__facts > div {
   display: grid;
-  grid-template-columns: 14mm 1fr;
+  grid-template-columns: 20mm 1fr;
   gap: 1mm;
   align-items: baseline;
 }
@@ -1143,33 +1143,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.member-id-card__emergency {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25mm;
-  margin-top: 1.4mm;
-  text-align: left;
-}
-
-.member-id-card__emergency-name {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: 7pt;
-  font-weight: 600;
-  color: #111827;
-  line-height: 1.2;
-}
-
-.member-id-card__emergency-phone {
-  font-size: 7pt;
-  font-weight: 600;
-  color: #111827;
-  white-space: nowrap;
-  line-height: 1.2;
 }
 
 .member-id-card__footer {
