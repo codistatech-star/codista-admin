@@ -21,7 +21,6 @@ const TAGLINE = "Discipline · Respect · Excellence";
 const CLUB_NAME = "Codista Academy";
 const WEBSITE = "www.codista.in";
 const BRAND_LINE_1 = "Coimbatore District Sports";
-const BRAND_LINE_2 = "Taekwondo Association";
 const BRAND_REG = "304/2011";
 
 function KickWatermark() {
@@ -140,11 +139,13 @@ function IdCardFace({
         <img src="/logo/logo.jpg" alt="" className="member-id-card__logo" />
         <p className="member-id-card__brand">
           <span>{BRAND_LINE_1}</span>
-          <span>
-            {BRAND_LINE_2}
-            <sup className="member-id-card__regmark">®</sup>
-            <span className="member-id-card__regno"> {BRAND_REG}</span>
+          <span className="member-id-card__brand-name">
+            Taekwondo&nbsp;Association
+            <span className="member-id-card__regmark" aria-hidden>
+              ®
+            </span>
           </span>
+          <span className="member-id-card__regno">{BRAND_REG}</span>
         </p>
       </div>
 
