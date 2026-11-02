@@ -192,6 +192,11 @@ export async function nextReceiptNo() {
 }
 
 export async function nextMemberCode() {
-  const count = await prisma.member.count();
-  return `ST${String(count + 1).padStart(3, "0")}`;
+  const prefix = "ST";
+  const latest = await prisma.member.findFirst({
+    where: { code: { startsWith: prefix } },
+    orderBy: { code: "desc" },
+  });
+  const next = latest ? Number(latest.code.slice(prefix.length)) + 1 : 1;
+  return `${prefix}${String(next).padStart(3, "0")}`;
 }
