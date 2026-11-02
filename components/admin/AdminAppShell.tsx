@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { BranchSwitcher } from "@/components/admin/BranchSwitcher";
 import { LogoutButton } from "@/components/admin/LogoutButton";
+import { PwaUpdateBanner } from "@/components/admin/PwaUpdateBanner";
 import { cn } from "@/lib/utils";
 
 export function AdminAppShell({
@@ -45,6 +46,7 @@ export function AdminAppShell({
 
   return (
     <div className="admin-app flex h-dvh overflow-hidden">
+      <PwaUpdateBanner />
       {/* Desktop sidebar */}
       <div className="hidden h-full shrink-0 lg:flex">
         <AdminSidebar isAdmin={isAdmin} />
