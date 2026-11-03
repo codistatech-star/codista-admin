@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { PageHeader, AdminCard } from "@/components/admin/ui";
+import {
+  MemberStatusSplit,
+  type MemberStatusCounts,
+} from "@/components/admin/MemberStatusSplit";
 import { requireSession, getActiveBranchId } from "@/lib/auth-helpers";
 import { getAcademySettings, membershipStatus } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
@@ -30,9 +34,13 @@ export default async function DashboardPage() {
     include: { membership: true },
   });
 
-  let active = 0;
-  let expiring = 0;
-  let expired = 0;
+  const statusCounts: MemberStatusCounts = {
+    ACTIVE: 0,
+    EXPIRING: 0,
+    EXPIRED: 0,
+    INACTIVE: 0,
+    NONE: 0,
+  };
   for (const m of members) {
     const s = membershipStatus(
       m.isActive,
@@ -40,10 +48,9 @@ export default async function DashboardPage() {
       settings.expiringSoonDays,
       today,
     );
-    if (s === "ACTIVE") active++;
-    else if (s === "EXPIRING") expiring++;
-    else if (s === "EXPIRED") expired++;
+    statusCounts[s]++;
   }
+  const memberTotal = members.length;
 
   const sessionsToday = await prisma.attendanceSession.findMany({
     where: { branchId, date: today },
@@ -72,9 +79,6 @@ export default async function DashboardPage() {
   const lowCount = lowStock.filter((item) => item.quantity <= item.lowStockAt).length;
 
   const cards = [
-    { label: "Active members", value: String(active), href: "/admin/members?status=ACTIVE" },
-    { label: "Expiring soon", value: String(expiring), href: "/admin/members?status=EXPIRING" },
-    { label: "Expired", value: String(expired), href: "/admin/members?status=EXPIRED" },
     { label: "Attendance today", value: `${attendancePct}%`, href: "/admin/attendance" },
     {
       label: "Cash in today",
@@ -88,6 +92,18 @@ export default async function DashboardPage() {
     <div>
       <PageHeader title="Dashboard" description="Overview for the selected branch" />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="admin-card sm:col-span-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--admin-muted)]">
+            Members
+          </p>
+          <Link
+            href="/admin/members"
+            className="mt-3 inline-block text-3xl font-semibold text-[var(--admin-navy)] transition hover:underline"
+          >
+            {memberTotal}
+          </Link>
+          <MemberStatusSplit counts={statusCounts} />
+        </div>
         {cards.map((c) => (
           <Link
             key={c.label}

@@ -42,30 +42,33 @@ export default async function MembersPage({
     orderBy: { name: "asc" },
   });
 
-  const members = await prisma.member.findMany({
-    where: {
-      branchId,
-      ...(sp.q
-        ? {
-            OR: [
-              { name: { contains: sp.q, mode: "insensitive" } },
-              { code: { contains: sp.q, mode: "insensitive" } },
-              { mobile: { contains: sp.q } },
-            ],
-          }
-        : {}),
-      ...(sp.batchId ? { batches: { some: { batchId: sp.batchId } } } : {}),
-    },
-    include: {
-      membership: true,
-      classPlan: true,
-      beltGrade: true,
-      batches: { include: { batch: true } },
-    },
-    orderBy: { name: "asc" },
-  });
+  const [branchTotal, members] = await Promise.all([
+    prisma.member.count({ where: { branchId } }),
+    prisma.member.findMany({
+      where: {
+        branchId,
+        ...(sp.q
+          ? {
+              OR: [
+                { name: { contains: sp.q, mode: "insensitive" } },
+                { code: { contains: sp.q, mode: "insensitive" } },
+                { mobile: { contains: sp.q } },
+              ],
+            }
+          : {}),
+        ...(sp.batchId ? { batches: { some: { batchId: sp.batchId } } } : {}),
+      },
+      include: {
+        membership: true,
+        classPlan: true,
+        beltGrade: true,
+        batches: { include: { batch: true } },
+      },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
-  const statusFilter = sp.status ?? "ACTIVE";
+  const statusFilter = sp.status ?? "";
 
   const filtered = members
     .filter((m) => {
@@ -74,6 +77,9 @@ export default async function MembersPage({
       return s === statusFilter;
     })
     .sort((a, b) => a.name.trim().localeCompare(b.name.trim(), "en", { sensitivity: "base" }));
+
+  const shownCount = filtered.length;
+  const isNarrowed = Boolean(sp.q || sp.batchId || statusFilter);
 
   function badgeClass(status: string) {
     return status === "ACTIVE"
@@ -90,7 +96,20 @@ export default async function MembersPage({
       <PageHeader
         className="!mb-3"
         title="Members"
-        description={`${filtered.length} shown`}
+        description={
+          <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+            <span className="text-xl font-semibold tabular-nums text-[var(--admin-navy)]">
+              {shownCount}
+            </span>
+            {isNarrowed ? (
+              <span className="text-sm font-medium text-gray-700">
+                of {branchTotal} members
+              </span>
+            ) : (
+              <span className="text-sm font-medium text-gray-700">members</span>
+            )}
+          </p>
+        }
         actions={
           <Link href="/admin/members/new" className="btn-primary">
             Add member

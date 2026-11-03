@@ -8,7 +8,7 @@ export function PageHeader({
   className,
 }: {
   title: string;
-  description?: string;
+  description?: ReactNode;
   actions?: ReactNode;
   className?: string;
 }) {
@@ -16,7 +16,13 @@ export function PageHeader({
     <div className={cn("mb-6 flex flex-wrap items-start justify-between gap-4", className)}>
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-[var(--admin-muted)]">{description}</p> : null}
+        {description ? (
+          typeof description === "string" ? (
+            <p className="mt-1 text-sm text-[var(--admin-muted)]">{description}</p>
+          ) : (
+            <div className="mt-1">{description}</div>
+          )
+        ) : null}
       </div>
       {actions ? (
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">{actions}</div>
